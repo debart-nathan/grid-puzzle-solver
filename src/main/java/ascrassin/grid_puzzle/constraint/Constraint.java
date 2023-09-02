@@ -34,7 +34,7 @@ public abstract class Constraint {
 
     /**
      * The last opinion that the Constraint made on the cell without taking into
-     * account the possibleValueManager
+     * account the possibleValueManager (true for forbidden)
      */
     protected Map<Cell, Map<Integer, Boolean>> lastOpinions;
 
@@ -54,7 +54,6 @@ public abstract class Constraint {
             pvm.incrementConstraintCount(cell); // increment constraint count for each cell
 
         }
-        resetProp(); // call the propagateConstraint method
     }
 
     /**
