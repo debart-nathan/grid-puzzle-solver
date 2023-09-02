@@ -130,7 +130,6 @@ public class ComparisonConstraint extends Constraint {
      * @param cell The cell that serves as the reference point for updating the
      *             potential values of other cells in the subset.
      */
-
     private void updatePrecAndSucOpinionCell(Cell targetCell) {
 
         // Get the current value of the target cell
@@ -176,12 +175,12 @@ public class ComparisonConstraint extends Constraint {
         // If the cell precedes the constraint cell, generate new opinions for the
         // preceding cell
         if (iCell < iConstraintCell) {
-            generateNewOpinionsForPrecedingCell(iCell, constraintCell, newOpinionsForCell);
+            generateNewOpinionsForPrecedingCell(constraintCell, newOpinionsForCell);
         }
         // If the cell succeeds the constraint cell, generate new opinions for the
         // succeeding cell
         else if (iCell > iConstraintCell) {
-            generateNewOpinionsForSucceedingCell(iCell, constraintCell, newOpinionsForCell);
+            generateNewOpinionsForSucceedingCell(constraintCell, newOpinionsForCell);
         }
 
         return newOpinionsForCell;
@@ -196,7 +195,7 @@ public class ComparisonConstraint extends Constraint {
      * @param newOpinionsForCell The current opinions for the cell.
      * @return A map of new opinions for the cell.
      */
-    private Map<Integer, Boolean> generateNewOpinionsForPrecedingCell(int iCell, Cell constraintCell,
+    private Map<Integer, Boolean> generateNewOpinionsForPrecedingCell( Cell constraintCell,
             Map<Integer, Boolean> newOpinionsForCell) {
         // Get the opinions on the predecessors of the constraint cell
         Map<Integer, Boolean> precValueOpinionInner = precValueOpinion.get(constraintCell);
@@ -222,7 +221,7 @@ public class ComparisonConstraint extends Constraint {
      * @param newOpinionsForCell The current opinions for the cell.
      * @return A map of new opinions for the cell.
      */
-    private Map<Integer, Boolean> generateNewOpinionsForSucceedingCell(int iCell, Cell constraintCell,
+    private Map<Integer, Boolean> generateNewOpinionsForSucceedingCell(Cell constraintCell,
             Map<Integer, Boolean> newOpinionsForCell) {
         // Get the opinions on the successors of the constraint cell
         Map<Integer, Boolean> sucValueOpinionInner = sucValueOpinion.get(constraintCell);
@@ -259,37 +258,4 @@ public class ComparisonConstraint extends Constraint {
         return newOpinionsForCell;
     }
 
-    /**
-     * Updates the last opinions for a given cell based on the new opinions.
-     * If the old opinion for a value is null or different from the new opinion,
-     * it updates the PossibleValuesManager and sets the new opinion as the last
-     * opinion for the value.
-     *
-     * @param cell               The cell for which the last opinions are to be
-     *                           updated.
-     * @param newOpinionsForCell A map containing the new opinions for the cell.
-     */
-    private void updateLastOpinion(Cell cell, Map<Integer, Boolean> newOpinionsForCell) {
-        Map<Integer, Boolean> lastOpinionsForCell = lastOpinions.get(cell);
-        for (Map.Entry<Integer, Boolean> entry : newOpinionsForCell.entrySet()) {
-            Integer value = entry.getKey();
-            Boolean newOpinion = entry.getValue();
-            Boolean oldOpinion = lastOpinionsForCell.get(value);
-            if (oldOpinion == null || !oldOpinion.equals(newOpinion)) {
-                updatePossibleValuesManager(cell, value, newOpinion);
-                lastOpinionsForCell.put(value, newOpinion);
-            }
-        }
-    }
-
-    /**
-     * Updates the PossibleValuesManager based on the current state of the cells.
-     */
-    private void updatePossibleValuesManager(Cell cell, Integer value, Boolean newOpinion) {
-        if (Boolean.TRUE.equals(newOpinion)) {
-            pValuesManager.decrementValueCount(cell, value);
-        } else {
-            pValuesManager.incrementValueCount(cell, value);
-        }
-    }
 }

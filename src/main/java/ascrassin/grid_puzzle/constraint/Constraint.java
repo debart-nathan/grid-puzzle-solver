@@ -169,6 +169,40 @@ public abstract class Constraint {
 
     }
 
+     /**
+     * Updates the last opinions for a given cell based on the new opinions.
+     * If the old opinion for a value is null or different from the new opinion,
+     * it updates the PossibleValuesManager and sets the new opinion as the last
+     * opinion for the value.
+     *
+     * @param cell               The cell for which the last opinions are to be
+     *                           updated.
+     * @param newOpinionsForCell A map containing the new opinions for the cell.
+     */
+    protected void updateLastOpinion(Cell cell, Map<Integer, Boolean> newOpinionsForCell) {
+        Map<Integer, Boolean> lastOpinionsForCell = lastOpinions.get(cell);
+        for (Map.Entry<Integer, Boolean> entry : newOpinionsForCell.entrySet()) {
+            Integer value = entry.getKey();
+            Boolean newOpinion = entry.getValue();
+            Boolean oldOpinion = lastOpinionsForCell.get(value);
+            if (oldOpinion == null || !oldOpinion.equals(newOpinion)) {
+                updatePossibleValuesManager(cell, value, newOpinion);
+                lastOpinionsForCell.put(value, newOpinion);
+            }
+        }
+    }
+
+    /**
+     * Updates the PossibleValuesManager based on the current state of the cells.
+     */
+    protected void updatePossibleValuesManager(Cell cell, Integer value, Boolean newOpinion) {
+        if (Boolean.TRUE.equals(newOpinion)) {
+            pValuesManager.decrementValueCount(cell, value);
+        } else {
+            pValuesManager.incrementValueCount(cell, value);
+        }
+    }
+
 
 
     /**

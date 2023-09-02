@@ -8,30 +8,39 @@ import java.util.*;
  * Represents a unique value constraint on a subset of cells in a grid puzzle.
  * 
  * <p>
- * This class extends from the abstract {@link Constraint} class, and takes advantage 
- * of a {@link PossibleValuesManager} to control possible cell values ensuring uniqueness.
+ * This class extends from the abstract {@link Constraint} class, and takes
+ * advantage
+ * of a {@link PossibleValuesManager} to control possible cell values ensuring
+ * uniqueness.
  * </p>
  *
  * <p>
- * A unique value constraint needs to maintain the property that all cells in the 
+ * A unique value constraint needs to maintain the property that all cells in
+ * the
  * provided grid subset have unique values.
  * </p>
  * 
  * <p>
- * It overrides the {@code propagateCell} method inherited from Constraint. This method 
- * updates possible cell values based on a target cell's old and new value, contributing 
+ * It overrides the {@code propagateCell} method inherited from Constraint. This
+ * method
+ * updates possible cell values based on a target cell's old and new value,
+ * contributing
  * to uphold the unique value constraint.
  * </p>
  * 
  * <p>
- * The {@code isRuleBroken} method is also overridden, providing functionality to check 
- * if the unique value constraint is violated for the grid subset, through considering 
+ * The {@code isRuleBroken} method is also overridden, providing functionality
+ * to check
+ * if the unique value constraint is violated for the grid subset, through
+ * considering
  * the current values of the cells in the subset.
  * </p>
  * 
  * <p>
- * Further, it provides a {@code solveCell} method. This method puts forth a process 
- * to solve a cell within the grid subset by finding a unique value that can be assigned to it.
+ * Further, it provides a {@code solveCell} method. This method puts forth a
+ * process
+ * to solve a cell within the grid subset by finding a unique value that can be
+ * assigned to it.
  * </p>
  */
 public class UniqueValueConstraint extends Constraint {
@@ -60,8 +69,14 @@ public class UniqueValueConstraint extends Constraint {
         boolean allNewValuesDifferent = areAllValuesDifferent(targetCell, newValue);
 
         // Update the last opinion and value count based on these checks
-        updateLOptionAndVCount(targetCell, oldValue, newValue, allOldValuesDifferent,
-                allNewValuesDifferent);
+        Map<Integer, Boolean> newOpinionsForCell = new HashMap<>();
+        newOpinionsForCell.put(oldValue, allOldValuesDifferent);
+        newOpinionsForCell.put(newValue, allNewValuesDifferent);
+        updateLastOpinion(targetCell, newOpinionsForCell);
+
+        // Update PossibleValuesManager
+        updatePossibleValuesManager(targetCell, oldValue, allOldValuesDifferent);
+        updatePossibleValuesManager(targetCell, newValue, allNewValuesDifferent);
     }
 
     /**
@@ -141,38 +156,6 @@ public class UniqueValueConstraint extends Constraint {
         return true;
     }
 
-    /**
-     * Updates last opinions and value count for cells in grid subset.
-     *
-     * If old value is unique and exists:
-     * - Sets last opinion of this value to false
-     * - Increments value count
-     *
-     * @param targetCell            Cell with changed value.
-     * @param oldValue              Previous value of target cell.
-     * @param newValue              New value of target cell.
-     * @param allOldValuesDifferent Flag for unique old values.
-     * @param allNewValuesDifferent Flag for unique new values.
-     */
-    private void updateLOptionAndVCount(Cell targetCell, Integer oldValue,
-            Integer newValue, boolean allOldValuesDifferent, boolean allNewValuesDifferent) {
-        for (Cell cell : gridSubset) {
-            if (cell != targetCell) {
-                // If the old value is not null and all old values are different, update the
-                // last opinion and increment the value count
-                if (oldValue != null && allOldValuesDifferent) {
-                    this.lastOpinions.get(cell).put(oldValue, false);
-                    pValuesManager.incrementValueCount(cell, oldValue);
-                }
-                // If the new value is not null and all new values are different, update the
-                // last opinion and decrement the value count
-                if (newValue != null && allNewValuesDifferent) {
-                    this.lastOpinions.get(cell).put(newValue, true);
-                    pValuesManager.decrementValueCount(cell, newValue);
-                }
-            }
-        }
-    }
 
     /**
      * Updates the map of cells with unique values.
@@ -200,7 +183,8 @@ public class UniqueValueConstraint extends Constraint {
      * @param emptyCellCount Count of empty cells.
      * @return Updated count of empty cells.
      */
-    private int findUniqueValCell(Map<Integer, Cell> uniqueVals, int emptyCellCount, Map<Cell, Set<Integer>> cellValidValues) {
+    private int findUniqueValCell(Map<Integer, Cell> uniqueVals, int emptyCellCount,
+            Map<Cell, Set<Integer>> cellValidValues) {
         for (Cell cell : gridSubset) {
             if (cell.getValue() != null) {
                 continue;
