@@ -39,9 +39,9 @@ import ascrassin.grid_puzzle.kernel.Cell;
  * </p>
  * 
  * <p>
- * Override {@code solveCell} method inherited from Constraint.
- * this method always return false.
- * Because ComparisonConstraint doesn't have and advanced solving method.
+ * Override the {@code getSolvableCell} method inherited from Constraint.
+ * Always returns null as the ComparisonConstraint does not provide
+ * an advanced solving method.
  * </p>
  */
 public class ComparisonConstraint extends Constraint {
@@ -116,9 +116,16 @@ public class ComparisonConstraint extends Constraint {
         return false;
     }
 
+    /**
+     * This method does not attempt to find a cell within the grid subset.
+     * It always returns null as this class does not have a built-in algorithm
+     * to find a cell respecting the comparison constraint.
+     *
+     * @return null always, as no suitable cell can be found by this method.
+     */
     @Override
-    public boolean solveCell() {
-        return false;
+    public Map.Entry<Cell, Integer> getSolvableCell() {
+        return null;
     }
 
     /**
@@ -195,7 +202,7 @@ public class ComparisonConstraint extends Constraint {
      * @param newOpinionsForCell The current opinions for the cell.
      * @return A map of new opinions for the cell.
      */
-    private Map<Integer, Boolean> generateNewOpinionsForPrecedingCell( Cell constraintCell,
+    private Map<Integer, Boolean> generateNewOpinionsForPrecedingCell(Cell constraintCell,
             Map<Integer, Boolean> newOpinionsForCell) {
         // Get the opinions on the predecessors of the constraint cell
         Map<Integer, Boolean> precValueOpinionInner = precValueOpinion.get(constraintCell);

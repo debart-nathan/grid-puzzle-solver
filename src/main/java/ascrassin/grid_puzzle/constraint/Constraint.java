@@ -81,7 +81,7 @@ public abstract class Constraint {
         pValuesManager = null;
     }
 
-        /**
+    /**
      * Propagates the Constraint to the cells in the subset because a cell was
      * modified.
      * This method is abstract and must be implemented by subclasses.
@@ -98,14 +98,17 @@ public abstract class Constraint {
     public abstract boolean isRuleBroken();
 
     /**
-     * An abstract method that finds a cell to modify and changes its value based on
-     * the Constraint.
-     * This method needs to be implemented by the classes that extend the Constraint
-     * class.
-     * 
-     * @return true if a cell was found and modified, false otherwise.
+     * Tries to find a cell and the value it should have within the grid subset,
+     * ensuring the constraint is respected. If no cell can be found, it returns
+     * null.
+     * Implementation details are left for the concrete classes implementing this
+     * interface.
+     *
+     * @return Map.Entry<Cell, Integer> representing the cell to be updated and the
+     *         integer
+     *         value to assign, or null if no suitable cell could be found.
      */
-    public abstract boolean solveCell();
+    public abstract Map.Entry<Cell, Integer> getSolvableCell();
 
     /**
      * Sets a new PossibleValuesManager for this Constraint.
@@ -169,7 +172,7 @@ public abstract class Constraint {
 
     }
 
-     /**
+    /**
      * Updates the last opinions for a given cell based on the new opinions.
      * If the old opinion for a value is null or different from the new opinion,
      * it updates the PossibleValuesManager and sets the new opinion as the last
@@ -202,8 +205,6 @@ public abstract class Constraint {
             pValuesManager.incrementValueCount(cell, value);
         }
     }
-
-
 
     /**
      * Decrements the value count for each value with a positive opinion for the

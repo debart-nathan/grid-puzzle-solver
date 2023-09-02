@@ -29,7 +29,7 @@ import java.util.*;
  * </p>
  * 
  * <p>
- * The {@code isRuleBroken} method is also overridden, providing functionality
+ * It overrides the {@code isRuleBroken} , providing functionality
  * to check
  * if the unique value constraint is violated for the grid subset, through
  * considering
@@ -37,10 +37,9 @@ import java.util.*;
  * </p>
  * 
  * <p>
- * Further, it provides a {@code solveCell} method. This method puts forth a
- * process
- * to solve a cell within the grid subset by finding a unique value that can be
- * assigned to it.
+ * It overrides the {@code getSolvableCell} method. This method puts forth a
+ * process to find a cell and the value it should have within the grid subset,
+ * ensuring all cells have unique values.
  * </p>
  */
 public class UniqueValueConstraint extends Constraint {
@@ -80,13 +79,16 @@ public class UniqueValueConstraint extends Constraint {
     }
 
     /**
-     * Attempts to solve a cell in the grid subset by finding a unique value that
-     * can be assigned to it.
-     * 
-     * @return true if a cell was successfully solved, false otherwise
+     * Tries to find a cell and the value it should have within the grid subset,
+     * ensuring all cells have unique values. If no cell can be found, it returns
+     * null.
+     *
+     * @return Map.Entry<Cell, Integer> representing the cell to be updated and the
+     *         integer
+     *         value to assign, or null if no suitable cell could be found.
      */
     @Override
-    public boolean solveCell() {
+    public Map.Entry<Cell, Integer> getSolvableCell() {
         List<Integer> possibleCellValues = new ArrayList<>(lastOpinions.values().iterator().next().keySet());
         int countEmptyCells = 0;
         Map<Integer, Cell> cellsWithUniqueValues = new HashMap<>();
@@ -101,7 +103,7 @@ public class UniqueValueConstraint extends Constraint {
         countEmptyCells = findUniqueValCell(cellsWithUniqueValues, countEmptyCells, cellValidValues);
 
         if (possibleCellValues.size() > countEmptyCells) {
-            return false;
+            return null;
         }
 
         return setUniqueValCell(cellsWithUniqueValues);
@@ -156,7 +158,6 @@ public class UniqueValueConstraint extends Constraint {
         return true;
     }
 
-
     /**
      * Updates the map of cells with unique values.
      *
@@ -207,16 +208,16 @@ public class UniqueValueConstraint extends Constraint {
      *                              be set to
      * @return true if a cell value was successfully set, false otherwise
      */
-    private boolean setUniqueValCell(Map<Integer, Cell> cellsWithUniqueValues) {
+    private Map.Entry<Cell, Integer> setUniqueValCell(Map<Integer, Cell> cellsWithUniqueValues) {
         for (Map.Entry<Integer, Cell> entry : cellsWithUniqueValues.entrySet()) {
             Cell targetCell = entry.getValue();
             Integer targetValue = entry.getKey();
-            if (targetCell != null && targetCell.setValue(targetValue)) {
-                return true; // The cell was successfully solved
+            if (targetCell != null) {
+                return new AbstractMap.SimpleEntry<>(targetCell, targetValue);
             }
         }
         // If no cell could be solved, return false
-        return false;
+        return null;
     }
 
 }
