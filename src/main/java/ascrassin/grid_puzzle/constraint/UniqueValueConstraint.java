@@ -8,24 +8,31 @@ import java.util.*;
  * Represents a unique value constraint on a subset of cells in a grid puzzle.
  * 
  * <p>
- * This class extends the abstract {@link Constraint} class. It uses a
- * {@link PossibleValuesManager}
- * to manage possible cell values.
+ * This class extends from the abstract {@link Constraint} class, and takes advantage 
+ * of a {@link PossibleValuesManager} to control possible cell values ensuring uniqueness.
+ * </p>
+ *
+ * <p>
+ * A unique value constraint needs to maintain the property that all cells in the 
+ * provided grid subset have unique values.
+ * </p>
  * 
  * <p>
- * It overrides the {@code propagateCell} method. This method updates
- * possible cell values
- * based on a target cell's old and new value.
+ * It overrides the {@code propagateCell} method inherited from Constraint. This method 
+ * updates possible cell values based on a target cell's old and new value, contributing 
+ * to uphold the unique value constraint.
+ * </p>
  * 
  * <p>
- * It also overrides the {@code isRuleBroken} method. This method checks if the
- * unique value constraint
- * is broken for the grid subset.
+ * The {@code isRuleBroken} method is also overridden, providing functionality to check 
+ * if the unique value constraint is violated for the grid subset, through considering 
+ * the current values of the cells in the subset.
+ * </p>
  * 
  * <p>
- * Additionally, it provides a {@code solveCell} method. This method solves a
- * cell by finding a unique
- * value that can be assigned to it.
+ * Further, it provides a {@code solveCell} method. This method puts forth a process 
+ * to solve a cell within the grid subset by finding a unique value that can be assigned to it.
+ * </p>
  */
 public class UniqueValueConstraint extends Constraint {
 
