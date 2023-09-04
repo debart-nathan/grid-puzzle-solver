@@ -1,6 +1,7 @@
 package ascrassin.grid_puzzle.constraint;
 
 import ascrassin.grid_puzzle.kernel.Cell;
+import ascrassin.grid_puzzle.value_manager.*;
 
 import java.util.HashMap;
 import java.util.LinkedHashMap;
@@ -51,7 +52,7 @@ public abstract class Constraint {
         this.pValuesManager = pvm; // initialize possibleValuesManager with pvm
         this.lastOpinions = new LinkedHashMap<>();
         for (Cell cell : gridSubset) {
-            pvm.incrementConstraintCount(cell); // increment constraint count for each cell
+            pvm.linkConstraint(cell); // increment constraint count for each cell
 
         }
     }
@@ -66,7 +67,7 @@ public abstract class Constraint {
         // Loop over each cell in the Constraint's gridSubset
         for (Cell cell : gridSubset) {
             // Call PossibleValuesManager's decrementConstraintCount() for the cell
-            pValuesManager.decrementConstraintCount(cell);
+            pValuesManager.unlinkConstraint(cell);
 
             // Decrement value counts for the cell
             cleanPossibleValueValueCount(cell);
@@ -125,20 +126,20 @@ public abstract class Constraint {
             // If a PossibleValuesManager was previously set
             if (this.pValuesManager != null) {
                 // Decrement the constraint count for the cell
-                this.pValuesManager.decrementConstraintCount(cell);
+                this.pValuesManager.unlinkConstraint(cell);
                 // Clean the possible value count for the cell
                 cleanPossibleValueValueCount(cell);
             }
             // If a new PossibleValuesManager is provided
             if (pvm != null) {
                 // Increment the constraint count for the cell
-                pvm.incrementConstraintCount(cell);
+                pvm.linkConstraint(cell);
                 // Iterate over each entry in the last opinions of the cell
                 for (Map.Entry<Integer, Boolean> entry : lastOpinions.get(cell).entrySet()) {
                     // If the last opinion was true
                     if (Boolean.TRUE.equals(entry.getValue())) {
                         // Increment the value count for the cell
-                        pvm.incrementValueCount(cell, entry.getKey());
+                        pvm.allowCellValue(cell, entry.getKey());
                     }
                 }
             }
@@ -200,9 +201,9 @@ public abstract class Constraint {
      */
     protected void updatePossibleValuesManager(Cell cell, Integer value, Boolean newOpinion) {
         if (Boolean.TRUE.equals(newOpinion)) {
-            pValuesManager.decrementValueCount(cell, value);
+            pValuesManager.forbidCellValue(cell, value);
         } else {
-            pValuesManager.incrementValueCount(cell, value);
+            pValuesManager.allowCellValue(cell, value);
         }
     }
 
@@ -227,7 +228,7 @@ public abstract class Constraint {
             // Call PossibleValuesManager's decrementValueCount() for each value with a
             // positive opinion
             if (opinion) {
-                pValuesManager.decrementValueCount(cell, value);
+                pValuesManager.forbidCellValue(cell, value);
                 opinionEntry.setValue(false);
             }
 

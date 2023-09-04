@@ -6,6 +6,7 @@ import java.util.Map;
 import java.util.function.BiPredicate;
 
 import ascrassin.grid_puzzle.kernel.Cell;
+import ascrassin.grid_puzzle.value_manager.*;
 
 /**
  * Represents a comparison constraint on a subset of cells in a grid puzzle.

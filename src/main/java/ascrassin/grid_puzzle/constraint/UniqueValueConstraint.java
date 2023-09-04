@@ -1,6 +1,7 @@
 package ascrassin.grid_puzzle.constraint;
 
 import ascrassin.grid_puzzle.kernel.Cell;
+import ascrassin.grid_puzzle.value_manager.*;
 
 import java.util.*;
 

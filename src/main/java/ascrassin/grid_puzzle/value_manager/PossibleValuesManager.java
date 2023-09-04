@@ -1,4 +1,4 @@
-package ascrassin.grid_puzzle.constraint;
+package ascrassin.grid_puzzle.value_manager;
 
 import ascrassin.grid_puzzle.kernel.Cell;
 import java.util.Map;
@@ -17,7 +17,7 @@ import java.util.HashSet;
  * store the number
  * of constraints that allow each value for each cell.
  */
-public class PossibleValuesManager {
+public class PossibleValuesManager implements IValueManager {
 
     // A map to store the constraint count for each cell
     private Map<Cell, Integer> constraintCounts;
@@ -39,7 +39,7 @@ public class PossibleValuesManager {
      * 
      * @param cell The cell for which the constraint count is to be incremented.
      */
-    public void incrementConstraintCount(Cell cell) {
+    public void linkConstraint(Cell cell) {
         // Increment the constraint count for the given cell
         this.constraintCounts.put(cell, this.constraintCounts.getOrDefault(cell, 0) + 1);
     }
@@ -49,7 +49,7 @@ public class PossibleValuesManager {
      * 
      * @param cell The cell for which the constraint count is to be decremented.
      */
-    public void decrementConstraintCount(Cell cell) {
+    public void unlinkConstraint(Cell cell) {
         // Decrement the constraint count for the given cell
         this.constraintCounts.put(cell, this.constraintCounts.getOrDefault(cell, 0) - 1);
     }
@@ -60,7 +60,7 @@ public class PossibleValuesManager {
      * @param cell  The cell for which the value count is to be incremented.
      * @param value The value for which the count is to be incremented.
      */
-    public void incrementValueCount(Cell cell, int value) {
+    public void allowCellValue(Cell cell, int value) {
         // Get the value counts for the given cell
         Map<Integer, Integer> cellValueCounts;
         if (this.valueCounts.containsKey(cell)) {
@@ -79,7 +79,7 @@ public class PossibleValuesManager {
      * @param cell  The cell for which the value count is to be decremented.
      * @param value The value for which the count is to be decremented.
      */
-    public void decrementValueCount(Cell cell, int value) {
+    public void forbidCellValue(Cell cell, int value) {
         // Get the value counts for the given cell
         Map<Integer, Integer> cellValueCounts = this.valueCounts.get(cell);
         if (cellValueCounts != null) {
