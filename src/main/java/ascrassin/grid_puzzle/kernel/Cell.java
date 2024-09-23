@@ -1,49 +1,50 @@
 package ascrassin.grid_puzzle.kernel;
 
+import java.lang.ref.WeakReference;
+import ascrassin.grid_puzzle.constraint.Constraint;
 import java.util.ArrayList;
 import java.util.List;
 
-
-/**
- * Represents a cell in a grid puzzle.
- * 
- * <p>This class maintains the value of the cell, a flag indicating if the cell is solved, 
- * a flag indicating if the cell is a default cell, and a list of possible values for the cell.
- * 
- * <p>It provides methods to get and set the cell value, check if the cell is solved or default, 
- * and manage the possible values for the cell.
- */
 public class Cell {
+
     private Integer value;
     private boolean isSolved;
     private boolean isDefault;
     private List<Integer> possibleValues;
+    private final List<WeakReference<Constraint>> weakLinkedConstraints;
 
-    public Cell(int minValue, int maxValue, Integer value) {
+    public Cell(Integer minValue, Integer maxValue, Integer value) {
         this.value = value;
         this.isSolved = value != null;
         this.isDefault = value != null;
         this.possibleValues = new ArrayList<>();
+        this.weakLinkedConstraints = new ArrayList<>();
+
         if (!isSolved) {
-            for (int i = minValue; i <= maxValue; i++) {
+            for (Integer i = minValue; i <= maxValue; i++) {
                 possibleValues.add(i);
             }
         }
     }
 
     public Integer getValue() {
-        return value;
+        return this.value;
     }
 
     public boolean setValue(Integer value) {
         if (!isDefault) {
             if (possibleValues.contains(value) || value == null) {
+                Integer oldValue= this.value;
                 this.value = value;
                 this.isSolved = value != null;
+                for (WeakReference<Constraint> constraintRef : this.weakLinkedConstraints) {
+                    Constraint constraint = constraintRef.get();
+                    if (constraint != null) {
+                        constraint.propagateCell(this, oldValue);
+                    }
+                }
                 return true;
             }
-            return false;
-
         }
         return false;
     }
@@ -54,5 +55,24 @@ public class Cell {
 
     public List<Integer> getPossibleValues() {
         return possibleValues;
+    }
+
+    public boolean removePossibleValue(Integer value) {
+        return possibleValues.remove(value);
+    }
+
+    public void addLinkedConstraint(Constraint constraint) {
+        weakLinkedConstraints.add(new WeakReference<>(constraint));
+    }
+
+    public List<Constraint> getLinkedConstraints() {
+        List<Constraint> liveConstraints = new ArrayList<>();
+        for (WeakReference<Constraint> ref : weakLinkedConstraints) {
+            Constraint constraint = ref.get();
+            if (constraint != null) {
+                liveConstraints.add(constraint);
+            }
+        }
+        return liveConstraints;
     }
 }
