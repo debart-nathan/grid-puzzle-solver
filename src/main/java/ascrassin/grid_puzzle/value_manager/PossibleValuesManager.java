@@ -60,7 +60,7 @@ public class PossibleValuesManager implements IValueManager {
      * @param cell  The cell for which the value count is to be incremented.
      * @param value The value for which the count is to be incremented.
      */
-    public void allowCellValue(Cell cell, int value) {
+    public void allowCellValue(Cell cell, Integer value) {
         // Get the value counts for the given cell
         Map<Integer, Integer> cellValueCounts;
         if (this.valueCounts.containsKey(cell)) {
@@ -79,7 +79,7 @@ public class PossibleValuesManager implements IValueManager {
      * @param cell  The cell for which the value count is to be decremented.
      * @param value The value for which the count is to be decremented.
      */
-    public void forbidCellValue(Cell cell, int value) {
+    public void forbidCellValue(Cell cell, Integer value) {
         // Get the value counts for the given cell
         Map<Integer, Integer> cellValueCounts = this.valueCounts.get(cell);
         if (cellValueCounts != null) {
@@ -88,32 +88,26 @@ public class PossibleValuesManager implements IValueManager {
         }
     }
 
-    /**
-     * Returns a set of valid values for a given cell.
-     * A value is considered valid if it can be set for the cell based on the
-     * constraint counts and value counts.
-     *
-     * @param cell The cell for which to get the valid values.
-     * @return A HashSet containing all valid values for the cell.
-     */
     public Set<Integer> getValidValues(Cell cell) {
         // Create a HashSet to store the valid values. We use a HashSet because it
         // allows constant time complexity for the contains operation.
-        HashSet<Integer> validValues = new HashSet<>();
-
+        Map<Integer, Integer> cellValueCounts = this.valueCounts.getOrDefault(cell, new HashMap<>());
+        
         // Get the value counts for the given cell. If the cell is not in the
         // valueCounts map, we use an empty HashMap.
-        Map<Integer, Integer> cellValueCounts = this.valueCounts.getOrDefault(cell, new HashMap<Integer, Integer>());
-
+        Set<Integer> validValues = new HashSet<>(cell.getPossibleValues()); // Initialize with all possible values
+        
         // Iterate over all values in the cellValueCounts map.
-        for (Integer value : cellValueCounts.keySet()) {
+        for (Map.Entry<Integer, Integer> entry : cellValueCounts.entrySet()) {
+            Integer value = entry.getKey();
+            
             // Check if the value can be set for the cell by calling the canSetValue method.
-            // If it can be set, add it to the validValues HashSet.
-            if (canSetValue(cell, value)) {
-                validValues.add(value);
+            // If it cannot be set, remove it from the validValues HashSet.
+            if (!canSetValue(cell, value)) {
+                validValues.remove(value);
             }
         }
-
+        
         // Return the validValues HashSet. This contains all values that can be set for
         // the cell.
         return validValues;
@@ -127,7 +121,7 @@ public class PossibleValuesManager implements IValueManager {
      * @param value The value to be checked.
      * @return true if the value can be set for the cell, false otherwise.
      */
-    public boolean canSetValue(Cell cell, int value) {
+    public boolean canSetValue(Cell cell, Integer value) {
         // Get the value counts for the given cell
         Map<Integer, Integer> cellValueCounts;
         if (this.valueCounts.containsKey(cell)) {
