@@ -88,9 +88,9 @@ public class ComparisonConstraint extends Constraint {
 
         updatePrecAndSucOpinionCell(targetCell);
 
-        for (int iCell = 0; iCell < gridSubset.size(); iCell++) {
+        for (Integer iCell = 0; iCell < gridSubset.size(); iCell++) {
             Cell cell = gridSubset.get(iCell);
-            for (int iConstraintCell = 0; iConstraintCell < gridSubset.size(); iConstraintCell++) {
+            for (Integer iConstraintCell = 0; iConstraintCell < gridSubset.size(); iConstraintCell++) {
                 Map<Integer, Boolean> newOpinionsForCell = generateNewOpinions(iCell, iConstraintCell);
                 updateLastOpinion(cell, newOpinionsForCell);
             }
@@ -107,7 +107,7 @@ public class ComparisonConstraint extends Constraint {
      */
     @Override
     public boolean isRuleBroken() {
-        for (int i = 0; i < this.gridSubset.size() - 1; i++) {
+        for (Integer i = 0; i < this.gridSubset.size() - 1; i++) {
             Cell currentCell = this.gridSubset.get(i);
             Cell nextCell = this.gridSubset.get(i + 1);
             if (!comparator.test(currentCell.getValue(), nextCell.getValue())) {
@@ -174,7 +174,7 @@ public class ComparisonConstraint extends Constraint {
      * @param iConstraintCell The index of the constraint cell.
      * @return A map of new opinions for the cell.
      */
-    private Map<Integer, Boolean> generateNewOpinions(int iCell, int iConstraintCell) {
+    private Map<Integer, Boolean> generateNewOpinions(Integer iCell, Integer iConstraintCell) {
         // Initialize a new map to store the new opinions for the cell
         Map<Integer, Boolean> newOpinionsForCell = new HashMap<>();
         // Get the constraint cell from the grid subset
