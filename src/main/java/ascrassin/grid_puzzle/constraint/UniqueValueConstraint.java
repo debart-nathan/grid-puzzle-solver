@@ -57,8 +57,8 @@ public class UniqueValueConstraint extends Constraint {
      */
     @Override
     public void propagateCell(Cell targetCell, Integer oldValue) {
-        // Check if the target cell is part of the grid subset
-        if (!gridSubset.contains(targetCell)) {
+    
+        if (!this.gridSubset.contains(targetCell)) {
             return;
         }
         Integer newValue = targetCell.getValue();
@@ -91,11 +91,11 @@ public class UniqueValueConstraint extends Constraint {
     @Override
     public Map.Entry<Cell, Integer> getSolvableCell() {
         List<Integer> possibleCellValues = new ArrayList<>(lastOpinions.values().iterator().next().keySet());
-        int countEmptyCells = 0;
+        Integer countEmptyCells = 0;
         Map<Integer, Cell> cellsWithUniqueValues = new HashMap<>();
         Map<Cell, Set<Integer>> cellValidValues = new HashMap<>();
 
-        for (Cell cell : gridSubset) {
+        for (Cell cell : this.gridSubset) {
             if (cell.getValue() == null) {
                 cellValidValues.put(cell, pValuesManager.getValidValues(cell));
             }
@@ -185,7 +185,7 @@ public class UniqueValueConstraint extends Constraint {
      * @param emptyCellCount Count of empty cells.
      * @return Updated count of empty cells.
      */
-    private int findUniqueValCell(Map<Integer, Cell> uniqueVals, int emptyCellCount,
+    private Integer findUniqueValCell(Map<Integer, Cell> uniqueVals, Integer emptyCellCount,
             Map<Cell, Set<Integer>> cellValidValues) {
         for (Cell cell : gridSubset) {
             if (cell.getValue() != null) {
