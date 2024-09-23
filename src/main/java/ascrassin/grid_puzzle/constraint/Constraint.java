@@ -50,10 +50,11 @@ public abstract class Constraint {
      */
     protected Constraint(List<Cell> gridSubset, PossibleValuesManager pvm) {
         this.pValuesManager = pvm; // initialize possibleValuesManager with pvm
+        this.gridSubset=gridSubset;
         this.lastOpinions = new LinkedHashMap<>();
         for (Cell cell : gridSubset) {
             pvm.linkConstraint(cell); // increment constraint count for each cell
-
+            cell.addLinkedConstraint(this);
         }
     }
 
@@ -184,7 +185,8 @@ public abstract class Constraint {
      * @param newOpinionsForCell A map containing the new opinions for the cell.
      */
     protected void updateLastOpinion(Cell cell, Map<Integer, Boolean> newOpinionsForCell) {
-        Map<Integer, Boolean> lastOpinionsForCell = lastOpinions.get(cell);
+
+        Map<Integer, Boolean> lastOpinionsForCell = this.lastOpinions.get(cell);
         for (Map.Entry<Integer, Boolean> entry : newOpinionsForCell.entrySet()) {
             Integer value = entry.getKey();
             Boolean newOpinion = entry.getValue();
@@ -222,7 +224,7 @@ public abstract class Constraint {
         // Loop over each entry (value and opinion) in the cell's opinion map
         for (Map.Entry<Integer, Boolean> opinionEntry : cellOpinions.entrySet()) {
             // Extract the value and the opinion
-            int value = opinionEntry.getKey();
+            Integer value = opinionEntry.getKey();
             boolean opinion = opinionEntry.getValue();
 
             // Call PossibleValuesManager's decrementValueCount() for each value with a
