@@ -50,7 +50,7 @@ public class PossibleValuesManager implements IValueManager {
 
     @Override
     public void allowCellValue(Cell cell, Integer value) {
-        if (!cell.getPossibleValues().contains(value)) {
+        if (value != null && !cell.getPossibleValues().contains(value)) {
             throw new IllegalArgumentException("Cannot allow value " + value + " for cell " + cell + ", it's not in the possible values");
         }
 
@@ -69,7 +69,7 @@ public class PossibleValuesManager implements IValueManager {
 
     @Override
     public void forbidCellValue(Cell cell, Integer value) {
-        if (!cell.getPossibleValues().contains(value)) {
+        if (value != null && !cell.getPossibleValues().contains(value)) {
             throw new IllegalArgumentException("Cannot forbid value " + value + " for cell " + cell + ", it's not in the possible values");
         }
 
