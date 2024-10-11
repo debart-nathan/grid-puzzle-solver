@@ -1,136 +1,152 @@
 package ascrassin.grid_puzzle.value_manager;
 
 import ascrassin.grid_puzzle.kernel.Cell;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Set;
-import java.util.HashMap;
-import java.util.HashSet;
+import java.util.*;
 
 /**
- * Manages the possible values for each cell in a grid puzzle.
- * 
- * <p>
- * This class provides functionality to manage and track the possible values for
- * each cell.
- * It maintains a map to store the constraint count for each cell and a map to
- * store the number
- * of constraints that allow each value for each cell.
+ * Manages the possible values for each cell in a grid puzzle,
+ * considering the constraints applied to the puzzle.
  */
 public class PossibleValuesManager implements IValueManager {
-
-    // A map to store the constraint count for each cell
-    private Map<Cell, Integer> constraintCounts;
-
-    // A map to store the number of constraints that allow each value for each cell
-    private Map<Cell, Map<Integer, Integer>> valueCounts;
-
+    
     /**
-     * Constructor for the PossibleValuesManager class.
-     * It initializes the constraintCounts and valueCounts maps.
+     * Stores the count of constraints linked to each cell.
      */
+    private Map<Cell, Integer> constraintCounts;
+    
+    /**
+     * Stores the count of constraints allowing each value for each cell.
+     */
+    private Map<Cell, Map<Integer, Integer>> valueCounts;
+    
+    /**
+     * Pre-computed set of allowed values for each cell, optimized for fast lookup.
+     */
+    private Map<Cell, Set<Integer>> allowedValues;
+
     public PossibleValuesManager() {
         this.constraintCounts = new HashMap<>();
         this.valueCounts = new HashMap<>();
+        this.allowedValues = new HashMap<>();
     }
 
-    /**
-     * Method to increment the constraint count for a cell.
-     * 
-     * @param cell The cell for which the constraint count is to be incremented.
-     */
+    @Override
     public void linkConstraint(Cell cell) {
-        // Increment the constraint count for the given cell
-        this.constraintCounts.put(cell, this.constraintCounts.getOrDefault(cell, 0) + 1);
+        constraintCounts.put(cell, constraintCounts.getOrDefault(cell, 0) + 1);
+        updateAllowedValues(cell);
     }
 
-    /**
-     * Method to decrement the constraint count for a cell.
-     * 
-     * @param cell The cell for which the constraint count is to be decremented.
-     */
+    @Override
     public void unlinkConstraint(Cell cell) {
-        // Decrement the constraint count for the given cell
-        this.constraintCounts.put(cell, this.constraintCounts.getOrDefault(cell, 0) - 1);
+        int count = constraintCounts.getOrDefault(cell, 0) - 1;
+        if (count < 0) {
+            throw new IllegalStateException("Constraint count cannot be negative");
+        }
+        constraintCounts.put(cell, count);
+        updateAllowedValues(cell);
     }
 
-    /**
-     * Method to increment the count for a value for a cell.
-     * 
-     * @param cell  The cell for which the value count is to be incremented.
-     * @param value The value for which the count is to be incremented.
-     */
+    @Override
     public void allowCellValue(Cell cell, Integer value) {
-        // Get the value counts for the given cell
-        Map<Integer, Integer> cellValueCounts;
-        if (this.valueCounts.containsKey(cell)) {
-            cellValueCounts = this.valueCounts.get(cell);
-        } else {
-            cellValueCounts = new HashMap<>();
-            this.valueCounts.put(cell, cellValueCounts);
-        }
-        // Increment the count for the given value
+        Map<Integer, Integer> cellValueCounts = getValueCounts(cell);
         cellValueCounts.put(value, cellValueCounts.getOrDefault(value, 0) + 1);
+        updateAllowedValues(cell);
+    }
+
+
+    @Override
+    public void forbidCellValue(Cell cell, Integer value) {
+        Map<Integer, Integer> cellValueCounts = getValueCounts(cell);
+        cellValueCounts.put(value, cellValueCounts.getOrDefault(value, 0) - 1);
+        
+        updateAllowedValues(cell);
     }
 
     /**
-     * Method to decrement the count for a value for a cell.
-     * 
-     * @param cell  The cell for which the value count is to be decremented.
-     * @param value The value for which the count is to be decremented.
+     * Helper method to get the value counts for a cell.
+     * Creates a new map if none exists for the cell.
+     *
+     * @param cell The cell for which to get value counts.
+     * @return Map of value counts for the cell.
      */
-    public void forbidCellValue(Cell cell, Integer value) {
-        // Get the value counts for the given cell
-        Map<Integer, Integer> cellValueCounts = this.valueCounts.get(cell);
-        if (cellValueCounts != null) {
-            // Decrement the count for the given value
-            cellValueCounts.put(value, cellValueCounts.getOrDefault(value, 0) - 1);
-        }
+    private Map<Integer, Integer> getValueCounts(Cell cell) {
+        return valueCounts.computeIfAbsent(cell, c -> new HashMap<>());
     }
 
-    public Set<Integer> getValidValues(Cell cell) {
-        // Create a HashSet to store the valid values. We use a HashSet because it
-        // allows constant time complexity for the contains operation.
-        Map<Integer, Integer> cellValueCounts = this.valueCounts.getOrDefault(cell, new HashMap<>());
-        
-        // Get the value counts for the given cell. If the cell is not in the
-        // valueCounts map, we use an empty HashMap.
-        Set<Integer> validValues = new HashSet<>(cell.getPossibleValues()); // Initialize with all possible values
-        
-        // Iterate over all values in the cellValueCounts map.
-        for (Map.Entry<Integer, Integer> entry : cellValueCounts.entrySet()) {
-            Integer value = entry.getKey();
-            
-            // Check if the value can be set for the cell by calling the canSetValue method.
-            // If it cannot be set, remove it from the validValues HashSet.
-            if (!canSetValue(cell, value)) {
-                validValues.remove(value);
+    /**
+     * Updates the set of allowed values for a cell based on the current constraint counts and value counts.
+     * A value is considered allowed if it's explicitly allowed or if there are no constraints.
+     *
+     * @param cell The cell for which to update allowed values.
+     */
+    private void updateAllowedValues(Cell cell) {
+        Set<Integer> newAllowedValues = new HashSet<>( Collections.emptySet());
+        int totalConstraints = constraintCounts.getOrDefault(cell, 0);
+    
+        if (totalConstraints == 0) {
+            // If no constraints, all values are allowed
+            newAllowedValues.addAll(new HashSet<>(allowedValues.getOrDefault(cell, Collections.emptySet())));
+        } else {
+            for (Integer value : getValueCounts(cell).keySet()) {
+                if (getValueCounts(cell).get(value) >= totalConstraints) {
+                    newAllowedValues.add(value);
+                }
             }
         }
-        
-        // Return the validValues HashSet. This contains all values that can be set for
-        // the cell.
+    
+        allowedValues.put(cell, newAllowedValues);
+    }
+
+    @Override
+    public Set<Integer> getValidValues(Cell cell) {
+        // Get the intersection of possible values and allowed values
+        Set<Integer> validValues = new HashSet<>(cell.getPossibleValues());
+        validValues.retainAll(allowedValues.getOrDefault(cell, Collections.emptySet()));
         return validValues;
     }
 
-    /**
-     * Method to check if a value can be set for a cell, based on the constraint
-     * count and the count for that value for the cell.
-     * 
-     * @param cell  The cell for which the check is to be performed.
-     * @param value The value to be checked.
-     * @return true if the value can be set for the cell, false otherwise.
-     */
+    @Override
     public boolean canSetValue(Cell cell, Integer value) {
-        // Get the value counts for the given cell
-        Map<Integer, Integer> cellValueCounts;
-        if (this.valueCounts.containsKey(cell)) {
-            cellValueCounts = this.valueCounts.get(cell);
-        } else {
-            cellValueCounts = new HashMap<>();
-        }
-        // Check if the value can be set for the cell
-        return Objects.equals(this.constraintCounts.getOrDefault(cell, 0),
-                cellValueCounts.getOrDefault(value, 0));
+        // Check if the value is in the pre-computed set of allowed values
+        return allowedValues.getOrDefault(cell, Collections.emptySet()).contains(value);
+    }
+
+    /**
+     * Helper method for testing: Returns the constraint counts map.
+     *
+     * @return Map of constraint counts for cells.
+     */
+    public Map<Cell, Integer> getConstraintCounts() {
+        return constraintCounts;
+    }
+
+    /**
+     * Helper method for testing: Returns the value counts map.
+     *
+     * @return Map of value counts for cells.
+     */
+    public Map<Cell, Map<Integer, Integer>> getValueCounts() {
+        return valueCounts;
+    }
+
+    /**
+     * Helper method for testing: Returns the allowed values map.
+     *
+     * @return Map of allowed values for cells.
+     */
+    public Map<Cell, Set<Integer>> getAllowedValues() {
+        return allowedValues;
+    }
+
+    /**
+     * Resets all data for a specific cell.
+     *
+     * @param cell The cell to reset.
+     */
+    public void resetCell(Cell cell) {
+        constraintCounts.remove(cell);
+        valueCounts.remove(cell);
+        allowedValues.remove(cell);
+        updateAllowedValues(cell); // Ensure we initialize with empty sets
     }
 }

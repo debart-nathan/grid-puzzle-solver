@@ -17,13 +17,31 @@
     </properties>
 
     <dependencies>
-        <!-- JUnit for unit testing -->
+        <!-- JUnit Jupiter -->
         <dependency>
-            <groupId>junit</groupId>
-            <artifactId>junit</artifactId>
-            <version>4.12</version>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter-engine</artifactId>
+            <version>5.8.2</version>
             <scope>test</scope>
         </dependency>
+
+        <!-- Mockito Core -->
+        <dependency>
+            <groupId>org.mockito</groupId>
+            <artifactId>mockito-core</artifactId>
+            <version>4.5.1</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.mockito</groupId>
+            <artifactId>mockito-junit-jupiter</artifactId>
+            <version>4.5.1</version>
+            <scope>test</scope>
+        </dependency>
+
+        <!-- Other dependencies -->
+        <!-- Add other dependencies here -->
+
     </dependencies>
 
     <build>
@@ -39,7 +57,7 @@
                 </configuration>
             </plugin>
 
-            <!-- Maven Surefire Plugin for running tests -->
+            <!-- Maven Surefire Plugin -->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-plugin</artifactId>
@@ -51,7 +69,7 @@
                 </configuration>
             </plugin>
 
-            <!-- exec-maven-plugin for executing Java programs -->
+            <!-- exec-maven-plugin -->
             <plugin>
                 <groupId>org.codehaus.mojo</groupId>
                 <artifactId>exec-maven-plugin</artifactId>
@@ -67,6 +85,7 @@
                     <mainClass>ascrassin.grid_puzzle.App</mainClass>
                 </configuration>
             </plugin>
+
         </plugins>
     </build>
 </project>
