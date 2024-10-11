@@ -48,17 +48,21 @@ public class PossibleValuesManager implements IValueManager {
 
     @Override
     public void allowCellValue(Cell cell, Integer value) {
+        if (!cell.getPossibleValues().contains(value)) {
+            throw new IllegalArgumentException("Cannot allow value " + value + " for cell " + cell + ", it's not in the possible values");
+        }
         Map<Integer, Integer> cellValueCounts = getValueCounts(cell);
         cellValueCounts.put(value, cellValueCounts.getOrDefault(value, 0) + 1);
         updateAllowedValues(cell);
     }
 
-
     @Override
     public void forbidCellValue(Cell cell, Integer value) {
+        if (!cell.getPossibleValues().contains(value)) {
+            throw new IllegalArgumentException("Cannot forbid value " + value + " for cell " + cell + ", it's not in the possible values");
+        }
         Map<Integer, Integer> cellValueCounts = getValueCounts(cell);
         cellValueCounts.put(value, cellValueCounts.getOrDefault(value, 0) - 1);
-        
         updateAllowedValues(cell);
     }
 
