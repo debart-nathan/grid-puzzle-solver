@@ -2,37 +2,39 @@ package ascrassin.grid_puzzle.value_manager;
 
 import ascrassin.grid_puzzle.kernel.Cell;
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Manages the possible values for each cell in a grid puzzle,
  * considering the constraints applied to the puzzle.
  */
 public class PossibleValuesManager implements IValueManager {
-    
+
     /**
      * Stores the count of constraints linked to each cell.
      */
-    private Map<Cell, Integer> constraintCounts;
-    
+    private final Map<Cell, Integer> constraintCounts;
+
     /**
      * Stores the count of constraints allowing each value for each cell.
      */
-    private Map<Cell, Map<Integer, Integer>> valueCounts;
-    
+    private final Map<Cell, Map<Integer, Integer>> valueCounts;
+
     /**
      * Pre-computed set of allowed values for each cell, optimized for fast lookup.
      */
-    private Map<Cell, Set<Integer>> allowedValues;
+    private final Map<Cell, Set<Integer>> allowedValues;
 
     public PossibleValuesManager() {
-        this.constraintCounts = new HashMap<>();
-        this.valueCounts = new HashMap<>();
-        this.allowedValues = new HashMap<>();
+        this.constraintCounts = new ConcurrentHashMap<>();
+        this.valueCounts = new ConcurrentHashMap<>();
+        this.allowedValues = new ConcurrentHashMap<>();
     }
 
     @Override
     public void linkConstraint(Cell cell) {
-        constraintCounts.put(cell, constraintCounts.getOrDefault(cell, 0) + 1);
+        initializeCell(cell);
+        constraintCounts.put(cell, constraintCounts.get(cell) + 1);
         updateAllowedValues(cell);
     }
 
@@ -51,9 +53,18 @@ public class PossibleValuesManager implements IValueManager {
         if (!cell.getPossibleValues().contains(value)) {
             throw new IllegalArgumentException("Cannot allow value " + value + " for cell " + cell + ", it's not in the possible values");
         }
+
         Map<Integer, Integer> cellValueCounts = getValueCounts(cell);
         cellValueCounts.put(value, cellValueCounts.getOrDefault(value, 0) + 1);
-        updateAllowedValues(cell);
+
+        // Only update allowed values if the count becomes greater than or equal to the constraint count
+        // and the value was not already in the allowed set
+        if (cellValueCounts.get(value) >= getConstraintCount(cell) &&
+            !allowedValues.computeIfAbsent(cell, k -> new HashSet<>()).contains(value)) {
+            Set<Integer> newAllowedValues = new HashSet<>(allowedValues.get(cell));
+            newAllowedValues.add(value);
+            allowedValues.put(cell, newAllowedValues);
+        }
     }
 
     @Override
@@ -61,40 +72,36 @@ public class PossibleValuesManager implements IValueManager {
         if (!cell.getPossibleValues().contains(value)) {
             throw new IllegalArgumentException("Cannot forbid value " + value + " for cell " + cell + ", it's not in the possible values");
         }
+
         Map<Integer, Integer> cellValueCounts = getValueCounts(cell);
         cellValueCounts.put(value, cellValueCounts.getOrDefault(value, 0) - 1);
-        updateAllowedValues(cell);
+
+        // Only update allowed values if the count becomes less than the constraint count
+        // and the value was in the allowed set
+        if (cellValueCounts.get(value) < getConstraintCount(cell) &&
+            allowedValues.computeIfAbsent(cell, k -> new HashSet<>()).contains(value)) {
+            Set<Integer> newAllowedValues = new HashSet<>(allowedValues.get(cell));
+            newAllowedValues.remove(value);
+            allowedValues.put(cell, newAllowedValues);
+        }
     }
 
-    /**
-     * Helper method to get the value counts for a cell.
-     * Creates a new map if none exists for the cell.
-     *
-     * @param cell The cell for which to get value counts.
-     * @return Map of value counts for the cell.
-     */
+    private int getConstraintCount(Cell cell) {
+        return constraintCounts.getOrDefault(cell, 0);
+    }
+
     private Map<Integer, Integer> getValueCounts(Cell cell) {
-        return valueCounts.computeIfAbsent(cell, c -> new HashMap<>());
+        return valueCounts.computeIfAbsent(cell, k -> new HashMap<>());
     }
 
-    /**
-     * Updates the set of allowed values for a cell based on the current constraint counts and value counts.
-     * A value is considered allowed if it's explicitly allowed or if there are no constraints.
-     *
-     * @param cell The cell for which to update allowed values.
-     */
     private void updateAllowedValues(Cell cell) {
-        Set<Integer> newAllowedValues = new HashSet<>( Collections.emptySet());
-        int totalConstraints = constraintCounts.getOrDefault(cell, 0);
+        Set<Integer> newAllowedValues = new HashSet<>();
+        Map<Integer, Integer> cellValueCounts = getValueCounts(cell);
+        int constraintCount = getConstraintCount(cell);
     
-        if (totalConstraints == 0) {
-            // If no constraints, all values are allowed
-            newAllowedValues.addAll(new HashSet<>(allowedValues.getOrDefault(cell, Collections.emptySet())));
-        } else {
-            for (Integer value : getValueCounts(cell).keySet()) {
-                if (getValueCounts(cell).get(value) >= totalConstraints) {
-                    newAllowedValues.add(value);
-                }
+        for (Map.Entry<Integer, Integer> entry : cellValueCounts.entrySet()) {
+            if (entry.getValue() >= constraintCount && cell.getPossibleValues().contains(entry.getKey())) {
+                newAllowedValues.add(entry.getKey());
             }
         }
     
@@ -103,15 +110,13 @@ public class PossibleValuesManager implements IValueManager {
 
     @Override
     public Set<Integer> getValidValues(Cell cell) {
-        // Get the intersection of possible values and allowed values
         Set<Integer> validValues = new HashSet<>(cell.getPossibleValues());
-        validValues.retainAll(allowedValues.getOrDefault(cell, Collections.emptySet()));
-        return validValues;
+        validValues.retainAll(Collections.unmodifiableSet(allowedValues.getOrDefault(cell, Collections.emptySet())));
+        return Collections.unmodifiableSet(validValues);
     }
 
     @Override
     public boolean canSetValue(Cell cell, Integer value) {
-        // Check if the value is in the pre-computed set of allowed values
         return allowedValues.getOrDefault(cell, Collections.emptySet()).contains(value);
     }
 
@@ -120,8 +125,8 @@ public class PossibleValuesManager implements IValueManager {
      *
      * @return Map of constraint counts for cells.
      */
-    public Map<Cell, Integer> getConstraintCounts() {
-        return constraintCounts;
+    public Optional<Map<Cell, Integer>> getConstraintCounts() {
+        return Optional.ofNullable(constraintCounts);
     }
 
     /**
@@ -129,8 +134,8 @@ public class PossibleValuesManager implements IValueManager {
      *
      * @return Map of value counts for cells.
      */
-    public Map<Cell, Map<Integer, Integer>> getValueCounts() {
-        return valueCounts;
+    public Optional<Map<Cell, Map<Integer, Integer>>> getValueCounts() {
+        return Optional.ofNullable(valueCounts);
     }
 
     /**
@@ -138,8 +143,8 @@ public class PossibleValuesManager implements IValueManager {
      *
      * @return Map of allowed values for cells.
      */
-    public Map<Cell, Set<Integer>> getAllowedValues() {
-        return allowedValues;
+    public Optional<Map<Cell, Set<Integer>>> getAllowedValues() {
+        return Optional.ofNullable(allowedValues);
     }
 
     /**
@@ -151,6 +156,18 @@ public class PossibleValuesManager implements IValueManager {
         constraintCounts.remove(cell);
         valueCounts.remove(cell);
         allowedValues.remove(cell);
-        updateAllowedValues(cell); // Ensure we initialize with empty sets
+        initializeCell(cell);
+        
+    }
+
+    /**
+     * Initializes a cell in the manager.
+     *
+     * @param cell The cell to initialize.
+     */
+    public void initializeCell(Cell cell) {
+        constraintCounts.putIfAbsent(cell, 0);
+        valueCounts.putIfAbsent(cell, new HashMap<>());
+        updateAllowedValues(cell);
     }
 }
