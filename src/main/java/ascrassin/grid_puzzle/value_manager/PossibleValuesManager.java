@@ -170,4 +170,15 @@ public class PossibleValuesManager implements IValueManager {
         valueCounts.putIfAbsent(cell, new HashMap<>());
         updateAllowedValues(cell);
     }
+
+    @Override
+    public Map.Entry<Cell, Integer> getSolvableCell() {
+        for (Cell cell : constraintCounts.keySet()) {
+            Set<Integer> validValues = getValidValues(cell);
+            if (validValues.size() == 1) {
+                return new AbstractMap.SimpleEntry<>(cell, validValues.iterator().next());
+            }
+        }
+        return null;
+    }
 }

@@ -255,4 +255,35 @@ public class PossibleValuesManagerTest {
             assertFalse(manager.canSetValue(cellMock, 4)); // Value outside possible values
         }
     }
+    @Nested
+    public class GetSolvableCell{
+        @Test
+        void testGetSolvableCell_ReturnsNull() {
+            // Arrange
+            manager.allowCellValue(cellMock, 1);
+            manager.allowCellValue(cellMock, 2);
+    
+            // Act
+            Map.Entry<Cell, Integer> result = manager.getSolvableCell();
+    
+            // Assert
+            assertNull(result);
+        }
+    
+        @Test
+        void testGetSolvableCell_ReturnsCellWithOneValidValue() {
+            // Arrange
+            manager.allowCellValue(cellMock, 1);
+            manager.forbidCellValue(cellMock, 2);
+    
+            // Act
+            Map.Entry<Cell, Integer> result = manager.getSolvableCell();
+    
+            // Assert
+            assertNotNull(result);
+            assertEquals(cellMock, result.getKey());
+            assertEquals(1, result.getValue());
+        }
+
+    }
 }
