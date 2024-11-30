@@ -26,7 +26,7 @@ public abstract class Constraint {
      * The PossibleValuesManager for this Constraint.
      * It manages the allowed and forbidden values for the cells in the grid.
      */
-    protected PossibleValuesManager pValuesManager;
+    protected PossibleValuesManager pvm;
 
     /**
      * The subset of cells in the grid that this Constraint applies to.
@@ -49,7 +49,7 @@ public abstract class Constraint {
      *                   forbidden values for the cells.
      */
     protected Constraint(List<Cell> gridSubset, PossibleValuesManager pvm) {
-        this.pValuesManager = pvm; // initialize possibleValuesManager with pvm
+        this.pvm = pvm; // initialize possibleValuesManager with pvm
         this.gridSubset=gridSubset;
         this.lastOpinions = new LinkedHashMap<>();
         for (Cell cell : gridSubset) {
@@ -68,7 +68,7 @@ public abstract class Constraint {
         // Loop over each cell in the Constraint's gridSubset
         for (Cell cell : gridSubset) {
             // Call PossibleValuesManager's decrementConstraintCount() for the cell
-            pValuesManager.unlinkConstraint(cell);
+            pvm.unlinkConstraint(cell);
 
             // Decrement value counts for the cell
             cleanPossibleValueValueCount(cell);
@@ -80,7 +80,7 @@ public abstract class Constraint {
 
         // If possibleValuesManager is not used after calling cleanupConstraint, set it
         // to null
-        pValuesManager = null;
+        pvm = null;
     }
 
     /**
@@ -125,9 +125,9 @@ public abstract class Constraint {
         // Iterate over each cell in the grid subset
         for (Cell cell : gridSubset) {
             // If a PossibleValuesManager was previously set
-            if (this.pValuesManager != null) {
+            if (this.pvm != null) {
                 // Decrement the constraint count for the cell
-                this.pValuesManager.unlinkConstraint(cell);
+                this.pvm.unlinkConstraint(cell);
                 // Clean the possible value count for the cell
                 cleanPossibleValueValueCount(cell);
             }
@@ -146,7 +146,7 @@ public abstract class Constraint {
             }
         }
         // Set the new PossibleValuesManager
-        this.pValuesManager = pvm;
+        this.pvm = pvm;
     }
 
     /**
@@ -203,9 +203,9 @@ public abstract class Constraint {
      */
     protected void updatePossibleValuesManager(Cell cell, Integer value, Boolean newOpinion) {
         if (Boolean.TRUE.equals(newOpinion)) {
-            pValuesManager.forbidCellValue(cell, value);
+            pvm.forbidCellValue(cell, value);
         } else {
-            pValuesManager.allowCellValue(cell, value);
+            pvm.allowCellValue(cell, value);
         }
     }
 
@@ -217,8 +217,7 @@ public abstract class Constraint {
      * 
      * @param cell The cell for which the value count needs to be decremented.
      */
-    private void cleanPossibleValueValueCount(Cell cell) {
-        // Get the cell's opinions from lastOpinions
+    protected void cleanPossibleValueValueCount(Cell cell) {
         Map<Integer, Boolean> cellOpinions = lastOpinions.get(cell);
 
         // Loop over each entry (value and opinion) in the cell's opinion map
@@ -230,8 +229,9 @@ public abstract class Constraint {
             // Call PossibleValuesManager's decrementValueCount() for each value with a
             // positive opinion
             if (opinion) {
-                pValuesManager.forbidCellValue(cell, value);
-                opinionEntry.setValue(false);
+                    pvm.forbidCellValue(cell, value);
+                    // Update the opinion in the new map
+                    updatedOpinions.put(value, false);
             }
 
         }
