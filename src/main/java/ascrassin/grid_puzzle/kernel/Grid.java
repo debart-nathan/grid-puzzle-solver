@@ -10,9 +10,9 @@ import java.util.Collection;
  * <p>This class contains the grid structure and provides methods to manage the cells in the grid.</p>
  */
 public class Grid {
-    private List<List<Cell>> cellGrid;
-    private Integer rows;
-    private Integer cols;
+    protected List<List<Cell>> cellGrid;
+    protected Integer rows;
+    protected Integer cols;
 
     /**
      * Constructor to create an instance of Grid.
@@ -133,7 +133,7 @@ public class Grid {
         return cols;
     }
 
-    private boolean isValidIndex(Integer index, Integer size) {
+    protected boolean isValidIndex(Integer index, Integer size) {
         return index >= 0 && index < size;
     }
 }

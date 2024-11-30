@@ -11,12 +11,12 @@ import org.mockito.MockitoAnnotations;
 import ascrassin.grid_puzzle.kernel.Cell;
 import java.util.*;
 
-public class PossibleValuesManagerTest {
+class PossibleValuesManagerTest {
 
     @Mock
-    private Cell cellMock;
+    protected Cell cellMock;
 
-    private PossibleValuesManager manager;
+    protected PossibleValuesManager manager;
 
     @BeforeEach
     void setUp() {
@@ -26,12 +26,12 @@ public class PossibleValuesManagerTest {
         addCellToManager();
     }
 
-    private void addCellToManager() {
+    protected void addCellToManager() {
         manager.linkConstraint(cellMock);
     }
 
     @Nested
-    public class InitialStateTests {
+    class InitialStateTests {
 
         @Test
         void testInitialConstraintCount() {
@@ -52,7 +52,7 @@ public class PossibleValuesManagerTest {
     }
 
     @Nested
-    public class AllowCellValueTests {
+    class AllowCellValueTests {
 
         @Test
         void testAllowCellValue_AddsValue() {
@@ -78,7 +78,7 @@ public class PossibleValuesManagerTest {
     }
 
     @Nested
-    public class ForbidCellValueTests {
+    class ForbidCellValueTests {
 
         @Test
         void testForbidCellValue_Initial() {

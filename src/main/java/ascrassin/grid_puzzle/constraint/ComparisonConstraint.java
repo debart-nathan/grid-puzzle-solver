@@ -46,9 +46,9 @@ import ascrassin.grid_puzzle.value_manager.*;
  * </p>
  */
 public class ComparisonConstraint extends Constraint {
-    private BiPredicate<Integer, Integer> comparator;
-    private Map<Cell, Map<Integer, Boolean>> precValueOpinion;
-    private Map<Cell, Map<Integer, Boolean>> sucValueOpinion;
+    protected BiPredicate<Integer, Integer> comparator;
+    protected Map<Cell, Map<Integer, Boolean>> precValueOpinion;
+    protected Map<Cell, Map<Integer, Boolean>> sucValueOpinion;
 
     /**
      * Constructs a new ComparisonConstraint with the specified list of cells,
@@ -138,7 +138,7 @@ public class ComparisonConstraint extends Constraint {
      * @param cell The cell that serves as the reference point for updating the
      *             potential values of other cells in the subset.
      */
-    private void updatePrecAndSucOpinionCell(Cell targetCell) {
+    protected void updatePrecAndSucOpinionCell(Cell targetCell) {
 
         // Get the current value of the target cell
         Integer newValue = targetCell.getValue();
@@ -174,7 +174,7 @@ public class ComparisonConstraint extends Constraint {
      * @param iConstraintCell The index of the constraint cell.
      * @return A map of new opinions for the cell.
      */
-    private Map<Integer, Boolean> generateNewOpinions(Integer iCell, Integer iConstraintCell) {
+    protected Map<Integer, Boolean> generateNewOpinions(Integer iCell, Integer iConstraintCell) {
         // Initialize a new map to store the new opinions for the cell
         Map<Integer, Boolean> newOpinionsForCell = new HashMap<>();
         // Get the constraint cell from the grid subset
@@ -203,7 +203,7 @@ public class ComparisonConstraint extends Constraint {
      * @param newOpinionsForCell The current opinions for the cell.
      * @return A map of new opinions for the cell.
      */
-    private Map<Integer, Boolean> generateNewOpinionsForPrecedingCell(Cell constraintCell,
+    protected Map<Integer, Boolean> generateNewOpinionsForPrecedingCell(Cell constraintCell,
             Map<Integer, Boolean> newOpinionsForCell) {
         // Get the opinions on the predecessors of the constraint cell
         Map<Integer, Boolean> precValueOpinionInner = precValueOpinion.get(constraintCell);
@@ -229,7 +229,7 @@ public class ComparisonConstraint extends Constraint {
      * @param newOpinionsForCell The current opinions for the cell.
      * @return A map of new opinions for the cell.
      */
-    private Map<Integer, Boolean> generateNewOpinionsForSucceedingCell(Cell constraintCell,
+    protected Map<Integer, Boolean> generateNewOpinionsForSucceedingCell(Cell constraintCell,
             Map<Integer, Boolean> newOpinionsForCell) {
         // Get the opinions on the successors of the constraint cell
         Map<Integer, Boolean> sucValueOpinionInner = sucValueOpinion.get(constraintCell);
@@ -254,7 +254,7 @@ public class ComparisonConstraint extends Constraint {
      * @param newOpinionsForCell The current opinions for the cell.
      * @return The updated opinions for the cell.
      */
-    private Map<Integer, Boolean> mergeOpinions(Map.Entry<Integer, Boolean> entry,
+    protected Map<Integer, Boolean> mergeOpinions(Map.Entry<Integer, Boolean> entry,
             Map<Integer, Boolean> newOpinionsForCell) {
         // Merge the opinion with the existing opinions for the cell using logical OR
         newOpinionsForCell.merge(

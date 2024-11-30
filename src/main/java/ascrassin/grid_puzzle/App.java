@@ -56,7 +56,7 @@ for (int i = 0; i < 9; i++) {
         System.out.println("\nIs solved: " + isSolved);
     }
     
-    private static void logSudoku(Grid sudoku) {
+    protected static void logSudoku(Grid sudoku) {
         for (int i = 0; i < 9; i++) {
             for (int j = 0; j < 9; j++) {
                 Object value = sudoku.getCellValue(i, j);

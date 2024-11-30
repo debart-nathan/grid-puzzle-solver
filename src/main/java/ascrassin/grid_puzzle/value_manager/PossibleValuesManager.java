@@ -13,17 +13,17 @@ public class PossibleValuesManager implements IValueManager {
     /**
      * Stores the count of constraints linked to each cell.
      */
-    private final Map<Cell, Integer> constraintCounts;
+    protected final Map<Cell, Integer> constraintCounts;
 
     /**
      * Stores the count of constraints allowing each value for each cell.
      */
-    private final Map<Cell, Map<Integer, Integer>> valueCounts;
+    protected final Map<Cell, Map<Integer, Integer>> valueCounts;
 
     /**
      * Pre-computed set of allowed values for each cell, optimized for fast lookup.
      */
-    private final Map<Cell, Set<Integer>> allowedValues;
+    protected final Map<Cell, Set<Integer>> allowedValues;
 
     public PossibleValuesManager() {
         this.constraintCounts = new ConcurrentHashMap<>();
@@ -86,15 +86,15 @@ public class PossibleValuesManager implements IValueManager {
         }
     }
 
-    private int getConstraintCount(Cell cell) {
+    protected int getConstraintCount(Cell cell) {
         return constraintCounts.getOrDefault(cell, 0);
     }
 
-    private Map<Integer, Integer> getValueCounts(Cell cell) {
+    protected Map<Integer, Integer> getValueCounts(Cell cell) {
         return valueCounts.computeIfAbsent(cell, k -> new HashMap<>());
     }
 
-    private void updateAllowedValues(Cell cell) {
+    protected void updateAllowedValues(Cell cell) {
         Set<Integer> newAllowedValues = new HashSet<>();
         Map<Integer, Integer> cellValueCounts = getValueCounts(cell);
         int constraintCount = getConstraintCount(cell);

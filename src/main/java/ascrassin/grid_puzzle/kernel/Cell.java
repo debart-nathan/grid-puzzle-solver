@@ -7,11 +7,11 @@ import java.util.List;
 
 public class Cell {
 
-    private Integer value;
-    private boolean isSolved;
-    private boolean isDefault;
-    private List<Integer> possibleValues;
-    private final List<WeakReference<Constraint>> weakLinkedConstraints;
+    protected Integer value;
+    protected boolean isSolved;
+    protected boolean isDefault;
+    protected List<Integer> possibleValues;
+    protected final List<WeakReference<Constraint>> weakLinkedConstraints;
 
     public Cell(Integer minValue, Integer maxValue, Integer value) {
         this.value = value;

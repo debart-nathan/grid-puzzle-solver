@@ -14,7 +14,7 @@ public class SudokuFactory {
         return initializeGridAndConstraints(puzzle, pvm);
     }
 
-    private static SudokuInfo initializeGridAndConstraints(Integer[][] puzzle, PossibleValuesManager pvm) {
+    protected static SudokuInfo initializeGridAndConstraints(Integer[][] puzzle, PossibleValuesManager pvm) {
         Grid grid = new Grid(puzzle, 1, 9);
 
         List<Constraint> allConstraints = new ArrayList<>();
@@ -57,7 +57,7 @@ public class SudokuFactory {
         return new SudokuInfo(grid, allConstraints);
     }
 
-    private static List<Cell> getRowCells(Grid grid, Integer row) {
+    protected static List<Cell> getRowCells(Grid grid, Integer row) {
         List<Cell> cells = new ArrayList<>();
         for (Integer i = 0; i < 9; i++) {
             cells.add(grid.getCellAt(row, i));
@@ -65,7 +65,7 @@ public class SudokuFactory {
         return cells;
     }
 
-    private static List<Cell> getColumnCells(Grid grid, Integer col) {
+    protected static List<Cell> getColumnCells(Grid grid, Integer col) {
         List<Cell> cells = new ArrayList<>();
         for (Integer i = 0; i < 9; i++) {
             cells.add(grid.getCellAt(i, col));
@@ -73,7 +73,7 @@ public class SudokuFactory {
         return cells;
     }
 
-    private static List<Cell> getBoxCells(Grid grid, Integer boxRow, Integer boxCol) {
+    protected static List<Cell> getBoxCells(Grid grid, Integer boxRow, Integer boxCol) {
         List<Cell> cells = new ArrayList<>();
         
         // Ensure boxRow and boxCol are within valid range
@@ -89,8 +89,8 @@ public class SudokuFactory {
     }
 
     public static class SudokuInfo {
-        private final Grid grid;
-        private final List<Constraint> constraints;
+        protected final Grid grid;
+        protected final List<Constraint> constraints;
 
         public SudokuInfo(Grid grid, List<Constraint> constraints) {
             this.grid = grid;

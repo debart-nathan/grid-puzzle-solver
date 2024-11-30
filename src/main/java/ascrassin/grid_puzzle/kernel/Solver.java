@@ -8,9 +8,9 @@ import java.util.Map;
 import java.util.Set;
 
 public class Solver {
-    private Grid grid;
-    private List<Constraint> constraints;
-    private IValueManager valueManager;
+    protected Grid grid;
+    protected List<Constraint> constraints;
+    protected IValueManager valueManager;
 
     public Solver(Grid grid, List<Constraint> constraints, IValueManager valueManager) {
         this.grid = grid;

@@ -7,7 +7,7 @@ import ascrassin.grid_puzzle.kernel.*;
 import ascrassin.grid_puzzle.value_manager.*;
 
 public class ConstraintFactory {
-    private ConstraintFactory() {}
+    protected ConstraintFactory() {}
 
     public static <T extends Constraint> T createInstance(Class<T> constraintClass, List<Cell> gridSubset,
             PossibleValuesManager pvm) {
