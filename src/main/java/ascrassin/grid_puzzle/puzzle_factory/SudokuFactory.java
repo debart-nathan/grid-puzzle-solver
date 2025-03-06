@@ -8,6 +8,8 @@ import ascrassin.grid_puzzle.constraint.*;
 
 public class SudokuFactory {
 
+    private SudokuFactory() {}
+
     public static SudokuInfo createSudoku(PossibleValuesManager pvm) {
         Integer[][] puzzle = new Integer[9][9];
         System.out.println("puzzle:");
@@ -17,27 +19,20 @@ public class SudokuFactory {
     protected static SudokuInfo initializeGridAndConstraints(Integer[][] puzzle, PossibleValuesManager pvm) {
         Grid grid = new Grid(puzzle, 1, 9);
 
-        List<Constraint> allConstraints = new ArrayList<>();
+        List<IConstraint> allConstraints = new ArrayList<>();
 
         // Row constraints
         for (Integer i = 0; i < 9; i++) {
             List<Cell> rowCells = getRowCells(grid, i);
-            Constraint rowConstraint = ConstraintFactory.createInstance(UniqueValueConstraint.class, rowCells, pvm);
-            for (Cell cell : rowCells) {
-                cell.addLinkedConstraint(rowConstraint);
-                pvm.linkConstraint(cell);
-            }
+            UniqueValueConstraint rowConstraint = new UniqueValueConstraint( rowCells, pvm);
             allConstraints.add(rowConstraint);
         }
 
         // Column constraints
         for (Integer j = 0; j < 9; j++) {
             List<Cell> colCells = getColumnCells(grid, j);
-            Constraint colConstraint = ConstraintFactory.createInstance(UniqueValueConstraint.class, colCells, pvm);
-            for (Cell cell : colCells) {
-                cell.addLinkedConstraint(colConstraint);
-                pvm.linkConstraint(cell);
-            }
+            UniqueValueConstraint colConstraint = new UniqueValueConstraint( colCells, pvm);
+
             allConstraints.add(colConstraint);
         }
 
@@ -45,11 +40,7 @@ public class SudokuFactory {
         for (Integer k = 0; k < 3; k++) {
             for (Integer l = 0; l < 3; l++) {
                 List<Cell> boxCells = getBoxCells(grid, k, l);
-                Constraint boxConstraint = ConstraintFactory.createInstance(UniqueValueConstraint.class, boxCells, pvm);
-                for (Cell cell : boxCells) {
-                    cell.addLinkedConstraint(boxConstraint);
-                    pvm.linkConstraint(cell);
-                }
+                UniqueValueConstraint boxConstraint = new UniqueValueConstraint(boxCells, pvm);
                 allConstraints.add(boxConstraint);
             }
         }
@@ -90,9 +81,9 @@ public class SudokuFactory {
 
     public static class SudokuInfo {
         protected final Grid grid;
-        protected final List<Constraint> constraints;
+        protected final List<IConstraint> constraints;
 
-        public SudokuInfo(Grid grid, List<Constraint> constraints) {
+        public SudokuInfo(Grid grid, List<IConstraint> constraints) {
             this.grid = grid;
             this.constraints = constraints;
         }
@@ -101,7 +92,7 @@ public class SudokuFactory {
             return grid;
         }
 
-        public List<Constraint> getConstraints() {
+        public List<IConstraint> getConstraints() {
             return constraints;
         }
     }

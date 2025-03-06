@@ -1,73 +1,103 @@
 package ascrassin.grid_puzzle.kernel;
 
-import ascrassin.grid_puzzle.constraint.Constraint;
+import ascrassin.grid_puzzle.constraint.IConstraint;
 import ascrassin.grid_puzzle.value_manager.IValueManager;
-
+import java.util.Arrays;
+import java.util.Deque;
+import java.util.HashMap;
+import java.util.LinkedList;
 import java.util.List;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+import java.lang.Number;
 import java.util.Map;
 import java.util.Set;
 
 public class Solver {
-    protected Grid grid;
-    protected List<Constraint> constraints;
-    protected IValueManager valueManager;
 
-    public Solver(Grid grid, List<Constraint> constraints, IValueManager valueManager) {
+    private Grid grid;
+    private List<IConstraint> constraints;
+    private IValueManager valueManager;
+    private boolean solved;
+
+    public Solver(Grid grid, List<IConstraint> constraints, IValueManager valueManager) {
         this.grid = grid;
         this.constraints = constraints;
         this.valueManager = valueManager;
+        this.solved = false;
     }
 
     public boolean solve() {
-        System.out.println("Starting solver");
-        while (true) {
+        while (!solved) {
             if (grid.isSolved()) {
                 System.out.println("Grid solved successfully");
                 return true;
             }
-    
+
             boolean progress = false;
-    
-            // Print constraint processing start
-            System.out.println("Processing constraints");
-    
-            for (Constraint constraint : constraints) {
-                Map.Entry<Cell, Integer> solvableCell = constraint.getSolvableCell();
-                if (solvableCell != null) {
-                    Cell cell = solvableCell.getKey();
-                    Integer value = solvableCell.getValue();
-                    cell.setValue(value);
-                    System.out.printf("Updated cell %s: %d%n", cell, value);
+
+            // Try Situation 1 (Unique Value Constraint)
+            System.out.println("Try Constraints");
+            if (solveUniqueValueConstraints()) {
+                progress = true;
+            }
+
+            // If no progress from Situation 1, try Situation 2 (Single Value)
+            if (!progress && !grid.isSolved()) {
+                System.out.println("Try single valid value");
+                if (solveCellsWithSingleValue()) {
+                    progress = true;
+                }
+            }
+            if (!progress && !grid.isSolved()){
+                return false;
+            }
+        }
+        return true;
+    }
+
+    private boolean solveUniqueValueConstraints() {
+        boolean progress = false;
+        for (IConstraint constraint : constraints) {
+            Map.Entry<Cell, Integer> solvableCell = constraint.getSolvableCell();
+            if (solvableCell != null) {
+                Cell cell = solvableCell.getKey();
+                Integer newValue = solvableCell.getValue();
+                Integer[] coord = grid.findCellCoordinates(cell);
+                grid.setCellValue(coord[0], coord[1], newValue);
+                System.out.printf("Updated cell %s: %d%n", Arrays.toString(coord), newValue);
+                progress = true;
+                break;
+            }
+        }
+        return progress;
+    }
+
+    private boolean solveCellsWithSingleValue() {
+        boolean progress = false;
+        for (Cell cell : grid.getAllCells()) {
+            if (!cell.isSolved()) {
+                Set<Integer> validValues = valueManager.getValidValues(cell);
+                if (validValues.size() == 1) {
+                    Integer newValue = validValues.iterator().next();
+
+                    Integer[] coord = grid.findCellCoordinates(cell);
+                    grid.setCellValue(coord[0], coord[1], newValue);
+                    System.out.printf("Updated cell %s: %d%n", Arrays.toString(coord), newValue);
                     progress = true;
                     break;
                 }
             }
-    
-            if (!progress) {
-                System.out.println("No progress made by constraints");
-    
-                // Print value assignment attempt
-                System.out.println("Attempting to assign values to cells");
-                
-                for (Cell cell : grid.getAllCells()) {
-                    Set<Integer> validValues = valueManager.getValidValues(cell);
-                    if (validValues.size() == 1) {
-                        Integer newValue = validValues.iterator().next();
-                        if (!newValue.equals(cell.getValue())) {
-                            cell.setValue(newValue);
-                            System.out.printf("Assigned new value %d to cell %s%n", newValue, cell);
-                            progress = true;
-                            break;
-                        }
-                    }
-                }
-            }
-    
-            if (!progress && !grid.isSolved()) {
-                System.out.println("No progress made and grid is not solved yet");
-                return false;
-            }
         }
+        return progress;
     }
 
+
+
+    public void resetSolver(Grid newGrid, List<IConstraint> newConstraints, IValueManager newValueManager) {
+        this.grid = newGrid;
+        this.constraints = newConstraints;
+        this.valueManager = newValueManager;
+        this.solved = false;
+    }
 }

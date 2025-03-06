@@ -26,8 +26,8 @@ class PossibleValuesManagerTest {
     @BeforeEach
     void setUp() {
         MockitoAnnotations.openMocks(this);
-        when(cellMock.getPossibleValues()).thenReturn(new ArrayList<>(Arrays.asList(1, 2, 3)));
-        when(cellMock2.getPossibleValues()).thenReturn(new ArrayList<>(Arrays.asList(2, 3, 4)));
+        when(cellMock.getPossibleValues()).thenReturn(new HashSet<>(Arrays.asList(1, 2, 3)));
+        when(cellMock2.getPossibleValues()).thenReturn(new HashSet<>(Arrays.asList(2, 3, 4)));
         manager = new PossibleValuesManager();
     }
 
@@ -118,7 +118,11 @@ class PossibleValuesManagerTest {
         void testInitializeCell() {
             manager.initializeCell(cellMock);
             assertEquals(0, manager.getConstraintCount(cellMock));
-            assertTrue(manager.getValueCounts(cellMock).isEmpty());
+            Map<Integer, Integer> initialCounts = new HashMap<>();
+            for (Integer value : cellMock.getPossibleValues()) {
+                initialCounts.put(value, 0);
+            }
+            assertEquals(manager.getValueCounts(cellMock),initialCounts);
             Set<Integer> allowedValues = manager.getAllowedValues().get(cellMock);
             assertTrue(allowedValues.containsAll(Arrays.asList(1, 2, 3)));
         }
@@ -128,7 +132,11 @@ class PossibleValuesManagerTest {
             manager.initializeCell(cellMock);
             manager.initializeCell(cellMock);
             assertEquals(0, manager.getConstraintCount(cellMock));
-            assertTrue(manager.getValueCounts(cellMock).isEmpty());
+            Map<Integer, Integer> initialCounts = new HashMap<>();
+            for (Integer value : cellMock.getPossibleValues()) {
+                initialCounts.put(value, 0);
+            }
+            assertEquals(manager.getValueCounts(cellMock),initialCounts);
             Set<Integer> allowedValues = manager.getAllowedValues().get(cellMock);
             assertTrue(allowedValues.containsAll(Arrays.asList(1, 2, 3)));
         }
@@ -139,8 +147,16 @@ class PossibleValuesManagerTest {
             manager.initializeCell(cellMock2);
             assertEquals(0, manager.getConstraintCount(cellMock));
             assertEquals(0, manager.getConstraintCount(cellMock2));
-            assertTrue(manager.getValueCounts(cellMock).isEmpty());
-            assertTrue(manager.getValueCounts(cellMock2).isEmpty());
+            Map<Integer, Integer> initialCounts = new HashMap<>();
+            for (Integer value : cellMock.getPossibleValues()) {
+                initialCounts.put(value, 0);
+            }
+            assertEquals(manager.getValueCounts(cellMock),initialCounts);
+            Map<Integer, Integer> initialCounts2 = new HashMap<>();
+            for (Integer value : cellMock2.getPossibleValues()) {
+                initialCounts2.put(value, 0);
+            }
+            assertEquals(manager.getValueCounts(cellMock2),initialCounts2);
             Map<Cell, Set<Integer>> allowedValues = manager.getAllowedValues();
             Set<Integer> cellMockAllowedValues = allowedValues.get(cellMock);
             Set<Integer> cellMock2AllowedValues = allowedValues.get(cellMock2);
@@ -296,18 +312,12 @@ class PossibleValuesManagerTest {
         @Test
         void testAllowCellValueNotManagedCell() {
             Cell unmanagedCell = mock(Cell.class);
-            when(unmanagedCell.getPossibleValues()).thenReturn(List.of(1, 2, 3));
+            when(unmanagedCell.getPossibleValues()).thenReturn(Set.of(1, 2, 3));
 
             assertThrows(IllegalArgumentException.class,
                     () -> manager.allowCellValue(unmanagedCell, 1));
         }
 
-        @Test
-        void testAllowCellValueNullValue() {
-            manager.initializeCell(cellMock);
-            manager.allowCellValue(cellMock, null);
-            assertTrue(manager.getValueCounts(cellMock).isEmpty());
-        }
 
         @Test
         void testAllowCellValueNotAllowedValue() {
@@ -361,17 +371,10 @@ class PossibleValuesManagerTest {
         @Test
         void testForbidCellValueNotManagedCell() {
             Cell unmanagedCell = mock(Cell.class);
-            when(unmanagedCell.getPossibleValues()).thenReturn(List.of(1, 2, 3));
+            when(unmanagedCell.getPossibleValues()).thenReturn(Set.of(1, 2, 3));
 
             assertThrows(IllegalArgumentException.class,
                     () -> manager.forbidCellValue(unmanagedCell, 1));
-        }
-
-        @Test
-        void testForbidCellValueNullValue() {
-            manager.initializeCell(cellMock);
-            manager.forbidCellValue(cellMock, null);
-            assertTrue(manager.getValueCounts(cellMock).isEmpty());
         }
 
         @Test
@@ -394,11 +397,6 @@ class PossibleValuesManagerTest {
             assertEquals(1, valueCounts.get(1).intValue());
         }
 
-        @Test
-        void testGetValueCountsEmpty() {
-            manager.initializeCell(cellMock);
-            assertTrue(manager.getValueCounts(cellMock).isEmpty());
-        }
 
         @Test
         void testGetValueCountsDifferentCells() {
@@ -552,7 +550,11 @@ class PossibleValuesManagerTest {
             manager.linkConstraint(cellMock);
             manager.resetCell(cellMock);
             assertEquals(0, manager.getConstraintCount(cellMock));
-            assertTrue(manager.getValueCounts(cellMock).isEmpty());
+            Map<Integer, Integer> initialCounts = new HashMap<>();
+            for (Integer value : cellMock.getPossibleValues()) {
+                initialCounts.put(value, 0);
+            }
+            assertEquals(manager.getValueCounts(cellMock),initialCounts);
             Set<Integer> allowedValues = manager.getAllowedValues().get(cellMock);
             assertEquals(Set.of(1, 2, 3), allowedValues);
         }
@@ -564,7 +566,11 @@ class PossibleValuesManagerTest {
             manager.resetCell(cellMock);
             manager.resetCell(cellMock);
             assertEquals(0, manager.getConstraintCount(cellMock));
-            assertTrue(manager.getValueCounts(cellMock).isEmpty());
+            Map<Integer, Integer> initialCounts = new HashMap<>();
+            for (Integer value : cellMock.getPossibleValues()) {
+                initialCounts.put(value, 0);
+            }
+            assertEquals(manager.getValueCounts(cellMock),initialCounts);
             Set<Integer> allowedValues = manager.getAllowedValues().get(cellMock);
             assertEquals(Set.of(1, 2, 3), allowedValues);
         }
@@ -577,11 +583,19 @@ class PossibleValuesManagerTest {
             manager.linkConstraint(cellMock2);
             manager.resetCell(cellMock2);
             assertEquals(1, manager.getConstraintCount(cellMock));
-            assertTrue(manager.getValueCounts(cellMock).isEmpty());
+            Map<Integer, Integer> initialCounts = new HashMap<>();
+            for (Integer value : cellMock.getPossibleValues()) {
+                initialCounts.put(value, 0);
+            }
+            assertEquals(manager.getValueCounts(cellMock),initialCounts);
             Set<Integer> allowedValues = manager.getAllowedValues().get(cellMock);
             assertEquals(Set.of(), allowedValues);
             assertEquals(0, manager.getConstraintCount(cellMock2));
-            assertTrue(manager.getValueCounts(cellMock2).isEmpty());
+            Map<Integer, Integer> initialCounts2 = new HashMap<>();
+            for (Integer value : cellMock2.getPossibleValues()) {
+                initialCounts2.put(value, 0);
+            }
+            assertEquals(manager.getValueCounts(cellMock2),initialCounts2);
             Set<Integer> allowedValues2 = manager.getAllowedValues().get(cellMock2);
             assertEquals(Set.of(2, 3, 4), allowedValues2);
         }

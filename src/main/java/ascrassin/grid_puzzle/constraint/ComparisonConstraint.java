@@ -51,11 +51,11 @@ public class ComparisonConstraint extends Constraint {
     protected Map<Cell, Map<Integer, Boolean>> sucValueOpinion;
 
     /**
-     * Constructs a new ComparisonConstraint with the specified list of cells,
+     * Constructs a new ComparisonConstraint with the specified Set of cells,
      * PossibleValuesManager, and comparison operation. The comparison operation is
      * represented as a BiPredicate object.
      *
-     * @param cells      The list of cells in the grid subset that the constraint
+     * @param cells      The Set of cells in the grid subset that the constraint
      *                   applies to.
      * @param pvm        The PossibleValuesManager that controls the possible values
      *                   of the cells.
@@ -84,16 +84,48 @@ public class ComparisonConstraint extends Constraint {
      * @param oldValue   The old value of the target cell before the change.
      */
     @Override
-    public void propagateCell(Cell targetCell, Integer oldValue) {
-
+    public boolean propagateCell(Cell targetCell, Integer oldValue) {
         updatePrecAndSucOpinionCell(targetCell);
+
+        boolean opinionChanged = false;
 
         for (Integer iCell = 0; iCell < gridSubset.size(); iCell++) {
             Cell cell = gridSubset.get(iCell);
             for (Integer iConstraintCell = 0; iConstraintCell < gridSubset.size(); iConstraintCell++) {
-                Map<Integer, Boolean> newOpinionsForCell = generateNewOpinions(iCell, iConstraintCell);
-                updateLastOpinion(cell, newOpinionsForCell);
+                Map<Integer, Boolean> newOpinionsForCell = generateUpdatedOpinions(cell, oldValue);
+
+                if (!newOpinionsForCell.equals(cell.getPossibleValues())) {
+                    opinionChanged = true;
+                    updateLastOpinion(cell, newOpinionsForCell);
+                }
             }
+        }
+
+        return opinionChanged;
+    }
+
+    /**
+     * Generates new opinions for cell values based on the current state of the
+     * puzzle.
+     *
+     * @param cell     The cell whose opinions need to be generated.
+     * @param oldValue The previous value of the cell (null if this is an initial
+     *                 call).
+     * @return A map of cell values to boolean opinions.
+     */
+    public Map<Integer, Boolean> generateUpdatedOpinions(Cell cell, Integer oldValue) {
+        if (oldValue == null) {
+            Map<Integer, Boolean> cellOpinions = new HashMap<>();
+            for (Integer value : cell.getPossibleValues()) {
+                cellOpinions.put(value, false); // defaultOpinion is false for each possible value
+            }
+            return cellOpinions;
+        } else {
+            Map<Integer, Boolean> newOpinionsForCell = new HashMap<>();
+            for (Integer value : cell.getPossibleValues()) {
+                newOpinionsForCell.put(value, !comparator.test(oldValue, value));
+            }
+            return newOpinionsForCell;
         }
     }
 
@@ -260,10 +292,13 @@ public class ComparisonConstraint extends Constraint {
         newOpinionsForCell.merge(
                 entry.getKey(),
                 entry.getValue(),
-                (v1, v2) -> Boolean.logicalOr(
-                        v1 == null ? false : v1,
-                        v2 == null ? false : v2));
+                (v1, v2) -> (v1 != null && v1) || (v2 != null && v2));
         return newOpinionsForCell;
+    }
+
+    @Override
+    public Map<Integer, Boolean> generateOpinions(Cell cell) {
+        throw new UnsupportedOperationException("Unimplemented method 'generateUpdatedOpinions'");
     }
 
 }

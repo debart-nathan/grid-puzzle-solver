@@ -2,23 +2,25 @@ package ascrassin.grid_puzzle.kernel;
 
 import java.lang.ref.WeakReference;
 import ascrassin.grid_puzzle.constraint.Constraint;
-import java.util.ArrayList;
-import java.util.List;
+import ascrassin.grid_puzzle.constraint.IConstraint;
+
+import java.util.HashSet;
+import java.util.Set;
 
 public class Cell {
 
     protected Integer value;
     protected boolean isSolved;
     protected boolean isDefault;
-    protected List<Integer> possibleValues;
-    protected final List<WeakReference<Constraint>> weakLinkedConstraints;
+    protected Set<Integer> possibleValues;
+    protected final Set<WeakReference<Constraint>> weakLinkedConstraints;
 
     public Cell(Integer minValue, Integer maxValue, Integer value) {
         this.value = value;
         this.isSolved = value != null;
         this.isDefault = value != null;
-        this.possibleValues = new ArrayList<>();
-        this.weakLinkedConstraints = new ArrayList<>();
+        this.possibleValues = new HashSet<>();
+        this.weakLinkedConstraints = new HashSet<>();
 
         if (!isSolved) {
             for (Integer i = minValue; i <= maxValue; i++) {
@@ -32,19 +34,18 @@ public class Cell {
     }
 
     public boolean setValue(Integer value) {
-        if (!isDefault) {
-            if (possibleValues.contains(value) || value == null) {
-                Integer oldValue= this.value;
-                this.value = value;
-                this.isSolved = value != null;
-                for (WeakReference<Constraint> constraintRef : this.weakLinkedConstraints) {
-                    Constraint constraint = constraintRef.get();
-                    if (constraint != null) {
-                        constraint.propagateCell(this, oldValue);
-                    }
+        if (!isDefault && possibleValues.contains(value) || value == null) {
+            Integer oldValue = this.value;
+            this.value = value;
+            this.isSolved = value != null;
+            for (WeakReference<Constraint> constraintRef : this.weakLinkedConstraints) {
+                IConstraint constraint = constraintRef.get();
+                if (constraint != null) {
+                    constraint.propagateCell(this, oldValue);
                 }
-                return true;
             }
+            return true;
+
         }
         return false;
     }
@@ -53,7 +54,7 @@ public class Cell {
         return isSolved;
     }
 
-    public List<Integer> getPossibleValues() {
+    public Set<Integer> getPossibleValues() {
         return possibleValues;
     }
 
@@ -65,8 +66,8 @@ public class Cell {
         weakLinkedConstraints.add(new WeakReference<>(constraint));
     }
 
-    public List<Constraint> getLinkedConstraints() {
-        List<Constraint> liveConstraints = new ArrayList<>();
+    public Set<Constraint> getLinkedConstraints() {
+        Set<Constraint> liveConstraints = new HashSet<>();
         for (WeakReference<Constraint> ref : weakLinkedConstraints) {
             Constraint constraint = ref.get();
             if (constraint != null) {
