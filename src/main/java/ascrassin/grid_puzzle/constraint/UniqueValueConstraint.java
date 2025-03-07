@@ -27,10 +27,13 @@ public class UniqueValueConstraint extends Constraint {
         if ((oldValue == null && cell.getValue() != null) ||
                 (oldValue != null && !oldValue.equals(cell.getValue()))) {
             // Generate updated opinions for the cell
-            Map<Integer, Boolean> newOpinions = generateUpdatedOpinions(cell, oldValue);
+            
 
             // Update last opinion for all cells in the subset
-            gridSubset.forEach(c -> updateLastOpinion(c, newOpinions));
+            for (Cell c : gridSubset) {
+                Map<Integer, Boolean> newOpinions = generateUpdatedOpinions(c, cell, oldValue, cell.getValue());
+                updateLastOpinion(c, newOpinions);
+            }
 
             return true;
         }
@@ -38,20 +41,23 @@ public class UniqueValueConstraint extends Constraint {
     }
 
     @Override
-    public Map<Integer, Boolean> generateUpdatedOpinions(Cell cell, Integer oldValue) {
-        Set<Integer> possibleValues = cell.getPossibleValues();
-
-        Map<Integer, Boolean> newOpinion = new HashMap<>(this.lastOpinions.get(cell));
-        Integer newValue = cell.getValue();
+    public Map<Integer, Boolean> generateUpdatedOpinions(Cell targetCell, Cell changedCell, Integer oldValue, Integer newValue) {
+        Set<Integer> possibleValues = targetCell.getPossibleValues();
+    
+        Map<Integer, Boolean> newOpinion = new HashMap<>(this.lastOpinions.get(targetCell));
+        
+        // Update opinion based on new value
         if (newValue != null) {
-            newOpinion.replace(newValue, true);
+            newOpinion.put(newValue, true);
         }
+        
+        // Update opinion based on old value
         if (oldValue != null && possibleValues.contains(oldValue)) {
             boolean isPresent = gridSubset.stream()
                     .anyMatch(c -> c.getValue() != null && c.getValue().equals(oldValue));
-            newOpinion.replace(oldValue, isPresent);
+            newOpinion.put(oldValue, isPresent);
         }
-
+        
         return newOpinion;
     }
 
@@ -100,10 +106,10 @@ public class UniqueValueConstraint extends Constraint {
             return null;
         }
 
-        return findUniqueEndemicValue(cellValidValues);
+        return findHiddenSingle(cellValidValues);
     }
 
-    private Map.Entry<Cell, Integer> findUniqueEndemicValue(Map<Cell, Set<Integer>> cellValidValues) {
+    private Map.Entry<Cell, Integer> findHiddenSingle(Map<Cell, Set<Integer>> cellValidValues) {
         Map<Integer, Integer> valueCounts = new HashMap<>();
         for (Set<Integer> values : cellValidValues.values()) {
             for (Integer value : values) {

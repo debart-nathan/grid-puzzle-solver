@@ -29,12 +29,14 @@ public interface IConstraint {
 /**
  * Generates updated opinions for a cell based on its new value, considering previously calculated opinions,
  * without setting or storing these opinions. Instead, it returns potential future states.
- *
- * @param cell     The cell whose opinions need to be updated.
+ * @param targetCell The cell whose opinions need to be updated.
+ * @param changedCell  The cell with the changed value
  * @param oldValue The previous value of the cell.
+ * @param newValue The new Value of the cell
+ *
  * @return A map of cell values to boolean opinions representing potential future states.
  */
-    public Map<Integer, Boolean> generateUpdatedOpinions(Cell cell, Integer oldValue);
+    public Map<Integer, Boolean> generateUpdatedOpinions(Cell targetCell, Cell changedCell, Integer oldValue, Integer newValue);
 
 /**
  * Generates fresh opinions for a cell from scratch based on the current state of the puzzle,

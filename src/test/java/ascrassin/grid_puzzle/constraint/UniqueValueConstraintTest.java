@@ -370,7 +370,7 @@ class UniqueValueConstraintTest {
             expectedOpinions.put(4, false);
             uvc.resetProp();
 
-            Map<Integer, Boolean> actualOpinions = uvc.generateUpdatedOpinions(cell1, null);
+            Map<Integer, Boolean> actualOpinions = uvc.generateUpdatedOpinions(cell1, cell1, null, null);
 
             assertEquals(expectedOpinions, actualOpinions);
         }
@@ -388,7 +388,7 @@ class UniqueValueConstraintTest {
             uvc.resetProp();
 
             // Act
-            Map<Integer, Boolean> actualOpinions = uvc.generateUpdatedOpinions(cell1, null);
+            Map<Integer, Boolean> actualOpinions = uvc.generateUpdatedOpinions(cell1, cell1, null, null);
 
             // Assert
             assertEquals(expectedOpinions, actualOpinions);
@@ -408,7 +408,7 @@ class UniqueValueConstraintTest {
             uvc.resetProp();
 
             // Act
-            Map<Integer, Boolean> actualOpinions = uvc.generateUpdatedOpinions(cell1, null);
+            Map<Integer, Boolean> actualOpinions = uvc.generateUpdatedOpinions(cell1, cell1, null, null);
 
             // Assert
             assertEquals(expectedOpinions, actualOpinions);

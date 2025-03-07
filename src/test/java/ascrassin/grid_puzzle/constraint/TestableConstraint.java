@@ -30,7 +30,7 @@ public class TestableConstraint  extends Constraint {
         return false;
     }
     @Override
-    public Map<Integer, Boolean> generateUpdatedOpinions(Cell cell, Integer oldValue) {
+    public Map<Integer, Boolean> generateUpdatedOpinions(Cell targetCell, Cell changedCell, Integer oldValue, Integer newValue) {
         return new HashMap<>();
 
     }
