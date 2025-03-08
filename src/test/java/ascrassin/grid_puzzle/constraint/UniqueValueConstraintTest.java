@@ -33,6 +33,8 @@ class UniqueValueConstraintTest {
 
     protected IConstraint uvc;
 
+    List<Cell> gridSubset;
+
     @BeforeEach
     void setUp() {
 
@@ -42,7 +44,7 @@ class UniqueValueConstraintTest {
         when(pvm.getValidValues(any())).thenReturn(new HashSet<>());
 
         // Create UniqueValueConstraint using the factory
-        List<Cell> gridSubset = new ArrayList<Cell>();
+        gridSubset = new ArrayList<Cell>();
         gridSubset.add(cell1);
         gridSubset.add(cell2);
         gridSubset.add(cell3);
@@ -75,6 +77,8 @@ class UniqueValueConstraintTest {
         when(pvm.getValidValues(cell3)).thenReturn(validValues3);
 
         uvc = new UniqueValueConstraint( gridSubset, pvm);
+
+        when(pvm.getCellsForConstraint(uvc)).thenReturn(gridSubset);
     }
 
     @Nested
@@ -97,6 +101,7 @@ class UniqueValueConstraintTest {
             when(cell1.getValue()).thenReturn(1);
             when(cell2.getValue()).thenReturn(1); // Duplicate value
             when(cell3.getValue()).thenReturn(null);
+
 
             // Act & Assert
             assertTrue(uvc.isRuleBroken());
@@ -423,7 +428,7 @@ class UniqueValueConstraintTest {
             // Arrange
 
             // Act
-            boolean result = ((UniqueValueConstraint) uvc).propagateCell(cellOutOfSubset, 2);
+            boolean result = ((UniqueValueConstraint) uvc).innerRulesPropagateCell(cellOutOfSubset, 2);
 
             // Assert
             assertFalse(result);
@@ -444,7 +449,7 @@ class UniqueValueConstraintTest {
             when(cell1.getValue()).thenReturn(2);
 
             // Act
-            boolean result = ((UniqueValueConstraint) uvc).propagateCell(cell1, 2);
+            boolean result = ((UniqueValueConstraint) uvc).innerRulesPropagateCell(cell1, 2);
 
             // Assert
             assertFalse(result);
@@ -466,7 +471,8 @@ class UniqueValueConstraintTest {
 
             // Act
             reset(pvm);
-            boolean result = ((UniqueValueConstraint) uvc).propagateCell(cell1, 2);
+            when(pvm.getCellsForConstraint(uvc)).thenReturn(gridSubset);
+            boolean result = ((UniqueValueConstraint) uvc).innerRulesPropagateCell(cell1, 2);
 
             // Assert
             assertTrue(result);

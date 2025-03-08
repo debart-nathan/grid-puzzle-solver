@@ -3,15 +3,9 @@ package ascrassin.grid_puzzle.kernel;
 import ascrassin.grid_puzzle.constraint.IConstraint;
 import ascrassin.grid_puzzle.value_manager.IValueManager;
 import java.util.Arrays;
-import java.util.Deque;
-import java.util.HashMap;
-import java.util.LinkedList;
 import java.util.List;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
-import java.lang.Number;
 import java.util.Map;
-import java.util.Set;
+
 
 public class Solver {
 
@@ -38,25 +32,25 @@ public class Solver {
 
             // Try Situation 1 (Unique Value Constraint)
             System.out.println("Try Constraints");
-            if (solveUniqueValueConstraints()) {
+            if (solveConstraints()) {
                 progress = true;
             }
 
             // If no progress from Situation 1, try Situation 2 (Single Value)
             if (!progress && !grid.isSolved()) {
                 System.out.println("Try single valid value");
-                if (solveCellsWithSingleValue()) {
+                if (solveVM()) {
                     progress = true;
                 }
             }
-            if (!progress && !grid.isSolved()){
+            if (!progress && !grid.isSolved()) {
                 return false;
             }
         }
         return true;
     }
 
-    private boolean solveUniqueValueConstraints() {
+    private boolean solveConstraints() {
         boolean progress = false;
         for (IConstraint constraint : constraints) {
             Map.Entry<Cell, Integer> solvableCell = constraint.getSolvableCell();
@@ -73,26 +67,20 @@ public class Solver {
         return progress;
     }
 
-    private boolean solveCellsWithSingleValue() {
+    private boolean solveVM() {
         boolean progress = false;
-        for (Cell cell : grid.getAllCells()) {
-            if (!cell.isSolved()) {
-                Set<Integer> validValues = valueManager.getValidValues(cell);
-                if (validValues.size() == 1) {
-                    Integer newValue = validValues.iterator().next();
 
-                    Integer[] coord = grid.findCellCoordinates(cell);
-                    grid.setCellValue(coord[0], coord[1], newValue);
-                    System.out.printf("Updated cell %s: %d%n", Arrays.toString(coord), newValue);
-                    progress = true;
-                    break;
-                }
-            }
+        Map.Entry<Cell, Integer> solvableCell = valueManager.getSolvableCell();
+        if (solvableCell != null) {
+            Cell cell = solvableCell.getKey();
+            Integer newValue = solvableCell.getValue();
+            Integer[] coord = grid.findCellCoordinates(cell);
+            grid.setCellValue(coord[0], coord[1], newValue);
+            System.out.printf("Updated cell %s: %d%n", Arrays.toString(coord), newValue);
+            progress = true;
         }
         return progress;
     }
-
-
 
     public void resetSolver(Grid newGrid, List<IConstraint> newConstraints, IValueManager newValueManager) {
         this.grid = newGrid;

@@ -17,107 +17,54 @@ import static org.mockito.Mockito.*;
 
 import java.util.List;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 
 
 class ConstraintTest {
 
     @Mock
-    protected PossibleValuesManager pvm;
+    private PossibleValuesManager pvm;
 
     @Mock
-    protected Cell cell1, cell2;
+    private Cell cell1, cell2;
 
-    protected List<Cell> cells;
-    protected TestableConstraint constraint;
+    private List<Cell> cells;
+    private Constraint constraint;
 
     @BeforeEach
     void setUp() {
         MockitoAnnotations.openMocks(this);
 
+        Set<Integer> possibleValues1 = new HashSet<>(Arrays.asList(1, 2, 3));
+        Set<Integer> possibleValues2 = new HashSet<>(Arrays.asList(2, 3, 4));
+
+        when(cell1.getPossibleValues()).thenReturn(possibleValues1);
+        when(cell2.getPossibleValues()).thenReturn(possibleValues2);
         cells = new ArrayList<>();
         cells.add(cell1);
         cells.add(cell2);
 
         // Initialize constraint with mocked objects
         constraint = new TestableConstraint(cells, pvm);
+        when(pvm.getCellsForConstraint(constraint)).thenReturn(cells);
     }
 
-    @Nested
-    class SetValueManagerTests {
-        private PossibleValuesManager oldPVM;
-        private PossibleValuesManager newPVM;
-        
-        @BeforeEach
-        void setUp() {
-            
-            // Additional setup specific to these tests
-            oldPVM = mock(PossibleValuesManager.class);
-            newPVM = mock(PossibleValuesManager.class);
-            
-            // Set initial ValuesManager
-            constraint.setValuesManager(oldPVM);
-        }
-        
-        @Test
-        void testSetValuesManagerWithNewManager() {
-            // Arrange
-            reset(oldPVM);
-            reset(newPVM);
-            // Act
-            constraint.setValuesManager(newPVM);
-            
-            // Assert
 
-            verify(oldPVM).unlinkConstraint(cell1);
-            verify(oldPVM).unlinkConstraint(cell2);
-            verify(newPVM).linkConstraint(cell1);
-            verify(newPVM).linkConstraint(cell2);
-        }
-        
-        @Test
-        void testSetValuesManagerWithoutNewManager() {
-            // Arrange
-            reset(oldPVM);
-            // Act
-            constraint.setValuesManager(null);
-            
-            // Assert
-            verify(oldPVM).unlinkConstraint(cell1);
-            verify(oldPVM).unlinkConstraint(cell2);
-
-        }
-        
-    }
-
-    @Nested
-    class ResetPropTests {
-        @Test
-        void testResetPropClearsLastOpinions() {
-            Map<Integer, Boolean> initialOpinions = new HashMap<>();
-            initialOpinions.put(1, true);
-            initialOpinions.put(2, false);
-
-            Map<Cell, Map<Integer, Boolean>> lastOpinions = new HashMap<>();
-            lastOpinions.put(cell1, initialOpinions);
-            constraint.lastOpinions = lastOpinions;
-
-            constraint.resetProp();
-
-            assertTrue(constraint.lastOpinions.isEmpty());
-        }
-    }
 
     @Nested
     class CleanupConstraintTests {
         @Test
         void testCleanupConstraintRemovesConstraintFromCells() {
             reset(pvm);
+            when(pvm.getCellsForConstraint(constraint)).thenReturn(cells);
             constraint.cleanupConstraint();
 
-            verify(pvm).unlinkConstraint(cell1);
-            verify(pvm).unlinkConstraint(cell2);
+            verify(pvm).unlinkConstraint(cell1,constraint);
+            verify(pvm).unlinkConstraint(cell2,constraint);
         }
 
         @Test

@@ -1,26 +1,23 @@
 package ascrassin.grid_puzzle.kernel;
 
 import java.lang.ref.WeakReference;
-import ascrassin.grid_puzzle.constraint.Constraint;
-import ascrassin.grid_puzzle.constraint.IConstraint;
-
+import ascrassin.grid_puzzle.value_manager.IValueManager;
 import java.util.HashSet;
 import java.util.Set;
 
 public class Cell {
-
     protected Integer value;
     protected boolean isSolved;
     protected boolean isDefault;
     protected Set<Integer> possibleValues;
-    protected final Set<WeakReference<Constraint>> weakLinkedConstraints;
+    protected final Set<WeakReference<IValueManager>> weakLinkedValueManagers;
 
     public Cell(Integer minValue, Integer maxValue, Integer value) {
         this.value = value;
         this.isSolved = value != null;
         this.isDefault = value != null;
         this.possibleValues = new HashSet<>();
-        this.weakLinkedConstraints = new HashSet<>();
+        this.weakLinkedValueManagers = new HashSet<>();
 
         if (!isSolved) {
             for (Integer i = minValue; i <= maxValue; i++) {
@@ -38,14 +35,16 @@ public class Cell {
             Integer oldValue = this.value;
             this.value = value;
             this.isSolved = value != null;
-            for (WeakReference<Constraint> constraintRef : this.weakLinkedConstraints) {
-                IConstraint constraint = constraintRef.get();
-                if (constraint != null) {
-                    constraint.propagateCell(this, oldValue);
+            
+            // Notify all linked Value Managers about the change
+            for (WeakReference<IValueManager> managerRef : weakLinkedValueManagers) {
+                IValueManager manager = managerRef.get();
+                if (manager != null) {
+                    manager.propagateCellValueChange(this, oldValue, value);
                 }
             }
+            
             return true;
-
         }
         return false;
     }
@@ -62,18 +61,28 @@ public class Cell {
         return possibleValues.remove(value);
     }
 
-    public void addLinkedConstraint(Constraint constraint) {
-        weakLinkedConstraints.add(new WeakReference<>(constraint));
-    }
-
-    public Set<Constraint> getLinkedConstraints() {
-        Set<Constraint> liveConstraints = new HashSet<>();
-        for (WeakReference<Constraint> ref : weakLinkedConstraints) {
-            Constraint constraint = ref.get();
-            if (constraint != null) {
-                liveConstraints.add(constraint);
+    public void addLinkedValueManager(IValueManager manager) {
+        boolean found = false;
+        for (WeakReference<IValueManager> existingRef : weakLinkedValueManagers) {
+            if (existingRef.get() == manager) {
+                found = true;
+                break;
             }
         }
-        return liveConstraints;
+        
+        if (!found) {
+            weakLinkedValueManagers.add(new WeakReference<>(manager));
+        }
+    }
+
+    public Set<IValueManager> getLinkedValueManagers() {
+        Set<IValueManager> liveManagers = new HashSet<>();
+        for (WeakReference<IValueManager> ref : weakLinkedValueManagers) {
+            IValueManager manager = ref.get();
+            if (manager != null) {
+                liveManagers.add(manager);
+            }
+        }
+        return liveManagers;
     }
 }

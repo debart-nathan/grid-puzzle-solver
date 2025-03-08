@@ -18,19 +18,17 @@ public class UniqueValueConstraint extends Constraint {
     }
 
     @Override
-    public boolean propagateCell(Cell cell, Integer oldValue) {
-        if (!gridSubset.contains(cell)) {
-            // If the cell is not in gridSubset, skip propagation
+    public boolean innerRulesPropagateCell(Cell cell, Integer oldValue) {
+        if (!pvm.getCellsForConstraint(this).contains(cell)) {
             return false;
         }
 
         if ((oldValue == null && cell.getValue() != null) ||
                 (oldValue != null && !oldValue.equals(cell.getValue()))) {
             // Generate updated opinions for the cell
-            
 
             // Update last opinion for all cells in the subset
-            for (Cell c : gridSubset) {
+            for (Cell c : pvm.getCellsForConstraint(this)) {
                 Map<Integer, Boolean> newOpinions = generateUpdatedOpinions(c, cell, oldValue, cell.getValue());
                 updateLastOpinion(c, newOpinions);
             }
@@ -41,23 +39,24 @@ public class UniqueValueConstraint extends Constraint {
     }
 
     @Override
-    public Map<Integer, Boolean> generateUpdatedOpinions(Cell targetCell, Cell changedCell, Integer oldValue, Integer newValue) {
+    public Map<Integer, Boolean> generateUpdatedOpinions(Cell targetCell, Cell changedCell, Integer oldValue,
+            Integer newValue) {
         Set<Integer> possibleValues = targetCell.getPossibleValues();
-    
+
         Map<Integer, Boolean> newOpinion = new HashMap<>(this.lastOpinions.get(targetCell));
-        
+
         // Update opinion based on new value
-        if (newValue != null) {
+        if (newValue != null && possibleValues.contains(newValue)) {
             newOpinion.put(newValue, true);
         }
-        
+
         // Update opinion based on old value
         if (oldValue != null && possibleValues.contains(oldValue)) {
-            boolean isPresent = gridSubset.stream()
+            boolean isPresent = pvm.getCellsForConstraint(this).stream()
                     .anyMatch(c -> c.getValue() != null && c.getValue().equals(oldValue));
             newOpinion.put(oldValue, isPresent);
         }
-        
+
         return newOpinion;
     }
 
@@ -67,8 +66,7 @@ public class UniqueValueConstraint extends Constraint {
         Set<Integer> possibleValues = cell.getPossibleValues();
 
         for (Integer value : possibleValues) {
-
-            boolean isPresent = gridSubset.stream()
+            boolean isPresent = pvm.getCellsForConstraint(this).stream()
                     .anyMatch(c -> c.getValue() != null && c.getValue().equals(value));
 
             newOpinions.put(value, isPresent);
@@ -79,13 +77,23 @@ public class UniqueValueConstraint extends Constraint {
 
     @Override
     public boolean isRuleBroken() {
-        return gridSubset.stream()
-                .anyMatch(this::hasDuplicateValue);
+        List<Cell> cells = pvm.getCellsForConstraint(this);
+        Set<Integer> uniqueValues = new HashSet<>();
+
+        for (Cell cell : cells) {
+            Integer cellValue = cell.getValue();
+            if (cellValue != null && !uniqueValues.add(cellValue)) {
+                return true; // Found a duplicate value
+                
+            }
+        }
+
+        return false; // No duplicates found
     }
 
     @Override
     public Map.Entry<Cell, Integer> getSolvableCell() {
-        Set<Cell> unsolvedCells = gridSubset.stream()
+        Set<Cell> unsolvedCells = pvm.getCellsForConstraint(this).stream()
                 .filter(cell -> !cell.isSolved())
                 .collect(Collectors.toSet());
 
@@ -144,27 +152,8 @@ public class UniqueValueConstraint extends Constraint {
                 }
             }
         }
-    
+
         return null;
     }
 
-    private boolean hasDuplicateValue(Cell cell) {
-        if (cell.getValue() == null) {
-            return false;
-        }
-
-        Integer cellValue = cell.getValue();
-
-        boolean hasDuplicate = false;
-        for (Cell c : gridSubset) {
-            if (!c.equals(cell)) {
-                if (c.getValue() != null && c.getValue().equals(cellValue)) {
-                    hasDuplicate = true;
-                    break;
-                }
-            }
-        }
-
-        return hasDuplicate;
-    }
 }

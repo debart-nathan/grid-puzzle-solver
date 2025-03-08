@@ -33,11 +33,6 @@ public abstract class Constraint implements IConstraint {
     protected PossibleValuesManager pvm;
 
     /**
-     * The subset of cells in the grid that this Constraint applies to.
-     */
-    protected List<Cell> gridSubset;
-
-    /**
      * The last opinion that the Constraint made on the cell without taking into
      * account the possibleValueManager (true for forbidden)
      */
@@ -51,14 +46,17 @@ public abstract class Constraint implements IConstraint {
      * @param pvm        The PossibleValuesManager to interface with
      */
     Constraint(List<Cell> gridSubset, PossibleValuesManager pvm) {
-        this.gridSubset = gridSubset;
         this.lastOpinions = new HashMap<>();
-        for (Cell cell : gridSubset) {
-            this.lastOpinions.putIfAbsent(cell, new HashMap<>());
-            cell.addLinkedConstraint(this);
-        }
-        setValuesManager(pvm);
 
+        this.pvm = pvm;
+        for (Cell cell : gridSubset) {
+            pvm.linkConstraint(cell, this);
+            this.lastOpinions.putIfAbsent(cell, new HashMap<>());
+            cell.addLinkedValueManager(pvm);
+
+        }
+
+        resetProp();
     }
 
     /**
@@ -67,32 +65,11 @@ public abstract class Constraint implements IConstraint {
      */
     @Override
     public void cleanupConstraint() {
-        for (Cell cell : gridSubset) {
-            pvm.unlinkConstraint(cell);
+        List<Cell> cells = pvm.getCellsForConstraint(this);
+        for (Cell cell : cells) {
+            pvm.unlinkConstraint(cell, this);
         }
-        gridSubset.clear();
         lastOpinions.clear();
-    }
-
-    /**
-     * Sets a new PossibleValuesManager for this constraint.
-     * If the new manager is different from the current one, resets the propagation
-     * state.
-     * 
-     * @param newPvm The new PossibleValuesManager to use
-     */
-    @Override
-    public void setValuesManager(PossibleValuesManager newPvm) {
-        PossibleValuesManager previousPvm = this.pvm;
-        resetProp();
-
-        if (newPvm != null) {
-            handleNewPVM(newPvm);
-        }
-        this.pvm = newPvm;
-        if (previousPvm != null) {
-            handlePreviousPVM(previousPvm);
-        }
     }
 
     @Override
@@ -106,18 +83,17 @@ public abstract class Constraint implements IConstraint {
      */
     @Override
     public void resetProp() {
-        for (Cell cell : gridSubset) {
-            if (lastOpinions.containsKey(cell)) {
+        if (this.pvm == null) {
+            System.out.println("Warning: PossibleValuesManager is null");
+            return;
+        }
 
-                lastOpinions.replace(cell,generateOpinions(cell));
-            } else {
-                Map<Cell, Map<Integer, Boolean>> emptyOpinions = new HashMap<>();
-                lastOpinions = emptyOpinions;
-            }
+        List<Cell> cells = this.pvm.getCellsForConstraint(this);
+        for (Cell cell : cells) {
+
+            updateLastOpinion(cell, generateOpinions(cell));
         }
-        for (Cell cell : gridSubset) {
-            propagateCell(cell, null);
-        }
+
     }
 
     /**
@@ -133,7 +109,8 @@ public abstract class Constraint implements IConstraint {
             Integer value = entry.getKey();
             Boolean newOpinion = entry.getValue();
             Boolean oldOpinion = lastOpinionsForCell.get(value);
-            if (oldOpinion == null || !oldOpinion.equals(newOpinion)) {
+            if ((oldOpinion == null && newOpinion != null)
+                    || (oldOpinion != null && !oldOpinion.equals(newOpinion))) {
                 updatePossibleValuesManager(cell, value, newOpinion);
                 lastOpinionsForCell.replace(value, newOpinion);
 
@@ -151,7 +128,7 @@ public abstract class Constraint implements IConstraint {
      * @param cell            The cell whose opinion changed
      * @param value           The value whose opinion changed
      * @param newValueOpinion The delta of the new opinion for the value
-     * @return                1 if forbid 0 if allow -1 if no pvm
+     * @return 1 if forbid 0 if allow -1 if no pvm
      */
     protected Integer updatePossibleValuesManager(Cell cell, Integer value, Boolean newValueOpinion) {
         if (pvm == null) {
@@ -166,50 +143,4 @@ public abstract class Constraint implements IConstraint {
         }
     }
 
-    /**
-     * Handles the transition from using the previous PossibleValuesManager to the
-     * new one.
-     * Unlinks the constraint from cells in the previous manager and cleans up.
-     * 
-     * @param previousPvm The previous PossibleValuesManager
-     */
-    protected void handlePreviousPVM(PossibleValuesManager previousPvm) {
-        if (previousPvm != null) {
-            for (Cell cell : gridSubset) {
-                Map<Integer, Boolean> cellOpinions = lastOpinions.get(cell);
-                if (cellOpinions != null) {
-                    for (Map.Entry<Integer, Boolean> entry : cellOpinions.entrySet()) {
-                        if (Boolean.FALSE.equals(entry.getValue())) {
-                            previousPvm.forbidCellValue(cell, entry.getKey());
-                        }
-                    }
-                }
-
-                previousPvm.unlinkConstraint(cell);
-            }
-        }
-    }
-
-    /**
-     * Handles the transition to using a new PossibleValuesManager.
-     * Links the constraint to cells in the new manager and updates allowed values.
-     * 
-     * @param newPvm The new PossibleValuesManager
-     */
-    protected void handleNewPVM(PossibleValuesManager newPvm) {
-        for (Cell cell : gridSubset) {
-            if (newPvm != null) {
-                newPvm.linkConstraint(cell);
-
-                Map<Integer, Boolean> cellOpinions = lastOpinions.get(cell);
-                if (cellOpinions != null) {
-                    for (Map.Entry<Integer, Boolean> entry : cellOpinions.entrySet()) {
-                        if (Boolean.FALSE.equals(entry.getValue())) {
-                            newPvm.allowCellValue(cell, entry.getKey());
-                        }
-                    }
-                }
-            }
-        }
-    }
 }

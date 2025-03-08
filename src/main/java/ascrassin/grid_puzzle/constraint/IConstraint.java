@@ -3,7 +3,6 @@ package ascrassin.grid_puzzle.constraint;
 import java.util.Map;
 
 import ascrassin.grid_puzzle.kernel.Cell;
-import ascrassin.grid_puzzle.value_manager.PossibleValuesManager;
 
 public interface IConstraint {
 
@@ -24,7 +23,7 @@ public interface IConstraint {
      * @param oldValue The previous value of the cell.
      * @return true if new Opinion was created and propagated
      */
-    boolean propagateCell(Cell cell, Integer oldValue);
+    boolean innerRulesPropagateCell(Cell cell, Integer oldValue);
 
 /**
  * Generates updated opinions for a cell based on its new value, considering previously calculated opinions,
@@ -66,17 +65,6 @@ public interface IConstraint {
      *         value to assign, or null if no suitable cell could be found.
      */
     Map.Entry<Cell, Integer> getSolvableCell();
-
-    /**
-     * Sets a new PossibleValuesManager for this Constraint.
-     * Decrement the constraint count and cleans the possible value count for each
-     * cell if a previous PossibleValuesManager was set.
-     * Increment the constraint count and updates the value count for each cell if
-     * new PossibleValuesManager is provided.
-     * 
-     * @param newManager The new PossibleValuesManager to set.
-     */
-    void setValuesManager(PossibleValuesManager pvm);
 
     Map<Integer, Boolean> getLastOpinions(Cell cell);
 

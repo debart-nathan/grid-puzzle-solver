@@ -11,10 +11,11 @@ import ascrassin.grid_puzzle.value_manager.PossibleValuesManager;
 /**
  * DO NOT USE :THIS IS ONLY FOR TESTING PURPOSES ON CONSTRAINT 
  */
-public class TestableConstraint  extends Constraint {
-    protected TestableConstraint (List<Cell> gridSubset, PossibleValuesManager pvm) {
-        super(gridSubset,pvm);
+public class TestableConstraint extends Constraint {
+    protected TestableConstraint(List<Cell> gridSubset, PossibleValuesManager pvm) {
+        super(gridSubset, pvm);
     }
+
     @Override
     public boolean isRuleBroken() {
         return false;
@@ -26,20 +27,17 @@ public class TestableConstraint  extends Constraint {
     }
 
     @Override
-    public boolean propagateCell(Cell cell, Integer oldValue) {
+    public boolean innerRulesPropagateCell(Cell cell, Integer oldValue) {
         return false;
     }
+
     @Override
     public Map<Integer, Boolean> generateUpdatedOpinions(Cell targetCell, Cell changedCell, Integer oldValue, Integer newValue) {
         return new HashMap<>();
-
     }
 
     @Override
     public Map<Integer, Boolean> generateOpinions(Cell cell) {
-
         return new HashMap<>();
     }
-
-
 }

@@ -1,13 +1,14 @@
 package ascrassin.grid_puzzle.value_manager;
 
+import ascrassin.grid_puzzle.constraint.IConstraint;
 import ascrassin.grid_puzzle.kernel.Cell;
 
 import java.util.Map;
 import java.util.Set;
 
 public interface IValueManager {
-    void linkConstraint(Cell cell);
-    void unlinkConstraint(Cell cell);
+    void linkConstraint(Cell cell,IConstraint constraint);
+    void unlinkConstraint(Cell cell, IConstraint constraint);
     void allowCellValue(Cell cell, Integer value);
     void forbidCellValue(Cell cell, Integer value);
     Set<Integer> getValidValues(Cell cell);
@@ -24,4 +25,12 @@ public interface IValueManager {
      *         value to assign, or null if no suitable cell could be found.
      */
     Map.Entry<Cell, Integer> getSolvableCell();
+
+    /**
+     * 
+     * @param changedCell
+     * @param oldValue
+     * @param newValue
+     */
+    void propagateCellValueChange(Cell changedCell, Integer oldValue, Integer newValue);
 }
