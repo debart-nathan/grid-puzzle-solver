@@ -51,28 +51,38 @@ public class PossibleValuesManager implements IValueManager {
     }
 
     @Override
-public void linkConstraint(Cell cell, IConstraint constraint) {
-    if (cellToConstraints.containsKey(cell)) {
-        cellToConstraints.get(cell).add(constraint);
-    } else {
-        List<IConstraint> constraints = new ArrayList<>();
-        constraints.add(constraint);
-        cellToConstraints.put(cell, constraints);
+    public void linkConstraint(Cell cell, IConstraint constraint, Map<Integer, Boolean> lastOpinion) {
+        if (cellToConstraints.containsKey(cell)) {
+            cellToConstraints.get(cell).add(constraint);
+        } else {
+            List<IConstraint> constraints = new ArrayList<>();
+            constraints.add(constraint);
+            cellToConstraints.put(cell, constraints);
+        }
+
+        if (constraintToCells.containsKey(constraint)) {
+            constraintToCells.get(constraint).add(cell);
+        } else {
+            List<Cell> cells = new ArrayList<>();
+            cells.add(cell);
+            constraintToCells.put(constraint, cells);
+        }
+
+        // increment values counts for value allowed by constraint (lastOpinion false or
+        // absent)
+        for (Integer value : cell.getPossibleValues()) {
+            if (lastOpinion == null || !lastOpinion.getOrDefault(value, false)) {
+                Map<Integer, Integer> cellValueCounts = getValueCounts(cell);
+                int count = cellValueCounts.getOrDefault(value, 0);
+                cellValueCounts.put(value, count + 1);
+
+            }
+        }
+        updateAllowedValues(cell);
     }
-    
-    if (constraintToCells.containsKey(constraint)) {
-        constraintToCells.get(constraint).add(cell);
-    } else {
-        List<Cell> cells = new ArrayList<>();
-        cells.add(cell);
-        constraintToCells.put(constraint, cells);
-    }
-    
-    updateAllowedValues(cell);
-}
 
     @Override
-    public void unlinkConstraint(Cell cell, IConstraint constraint) {
+    public void unlinkConstraint(Cell cell, IConstraint constraint, Map<Integer, Boolean> lastOpinion) {
         if (constraint == null) {
             return;
         }
@@ -84,6 +94,18 @@ public void linkConstraint(Cell cell, IConstraint constraint) {
 
             List<Cell> cells = constraintToCells.getOrDefault(constraint, Collections.emptyList());
             cells.remove(cells.indexOf(cell));
+
+            // decrement values counts for value allowed by constraint (lastOpinion false or
+            // absent)
+            for (Integer value : cell.getPossibleValues()) {
+                if (lastOpinion == null || !lastOpinion.getOrDefault(value, false)) {
+                    Map<Integer, Integer> cellValueCounts = getValueCounts(cell);
+                    int count = cellValueCounts.getOrDefault(value, 0);
+                    if (count > 0) {
+                        cellValueCounts.put(value, count - 1);
+                    }
+                }
+            }
 
             updateAllowedValues(cell);
         }
@@ -111,9 +133,10 @@ public void linkConstraint(Cell cell, IConstraint constraint) {
 
     @Override
     public void propagateCellValueChange(Cell cell, Integer oldValue, Integer newValue) {
-        this.getConstraintsForCell(cell).forEach(constraint -> 
-            constraint.innerRulesPropagateCell(cell, oldValue)
-        );
+        List<IConstraint> constraints = this.getConstraintsForCell(cell);
+        constraints.forEach(constraint -> constraint.innerRulesPropagateCell(cell, oldValue));
+
+        constraints.forEach(constraint -> constraint.wideReachRulesPossibleValues(cell, newValue));
     }
 
     /**
@@ -127,7 +150,7 @@ public void linkConstraint(Cell cell, IConstraint constraint) {
      *                                  values.
      */
     @Override
-    public void allowCellValue(Cell cell, Integer value) {
+    public void allowCellValue(Cell cell, Integer value, Boolean wideReach) {
         if (cell == null) {
             throw new IllegalArgumentException("Cell cannot be null");
         }
@@ -157,6 +180,10 @@ public void linkConstraint(Cell cell, IConstraint constraint) {
             Set<Integer> newAllowedValues = new HashSet<>(allowedValues.get(cell));
             newAllowedValues.add(value);
             allowedValues.put(cell, newAllowedValues);
+            List<IConstraint> constraints = getConstraintsForCell(cell);
+            for (IConstraint constraint : constraints) {
+                constraint.wideReachRulesPossibleValues(cell, value);
+            }
         }
     }
 
@@ -171,7 +198,7 @@ public void linkConstraint(Cell cell, IConstraint constraint) {
      *                                  values.
      */
     @Override
-    public void forbidCellValue(Cell cell, Integer value) {
+    public void forbidCellValue(Cell cell, Integer value, Boolean wideReach) {
         if (cell == null) {
             throw new IllegalArgumentException("Cell cannot be null");
         }
@@ -201,6 +228,10 @@ public void linkConstraint(Cell cell, IConstraint constraint) {
             Set<Integer> newAllowedValues = new HashSet<>(allowedValues.get(cell));
             newAllowedValues.remove(value);
             allowedValues.put(cell, newAllowedValues);
+            List<IConstraint> constraints = getConstraintsForCell(cell);
+            for (IConstraint constraint : constraints) {
+                constraint.wideReachRulesPossibleValues(cell, value);
+            }
         }
     }
 
@@ -233,7 +264,7 @@ public void linkConstraint(Cell cell, IConstraint constraint) {
         }
 
         allowedValues.put(cell, newAllowedValues);
-        
+
     }
 
     @Override
@@ -314,7 +345,7 @@ public void linkConstraint(Cell cell, IConstraint constraint) {
     @Override
     public Map.Entry<Cell, Integer> getSolvableCell() {
         for (Cell cell : cellToConstraints.keySet()) {
-            if(cell.isSolved()) {
+            if (cell.isSolved()) {
                 continue;
             }
             Set<Integer> validValues = getValidValues(cell);

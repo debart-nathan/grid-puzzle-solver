@@ -50,8 +50,12 @@ public abstract class Constraint implements IConstraint {
 
         this.pvm = pvm;
         for (Cell cell : gridSubset) {
-            pvm.linkConstraint(cell, this);
-            this.lastOpinions.putIfAbsent(cell, new HashMap<>());
+            Map<Integer, Boolean> lastOpinionsForCell = new HashMap<>();
+            this.lastOpinions.put(cell, lastOpinionsForCell);
+            pvm.linkConstraint(cell, this, lastOpinionsForCell);
+
+            
+
             cell.addLinkedValueManager(pvm);
 
         }
@@ -67,7 +71,7 @@ public abstract class Constraint implements IConstraint {
     public void cleanupConstraint() {
         List<Cell> cells = pvm.getCellsForConstraint(this);
         for (Cell cell : cells) {
-            pvm.unlinkConstraint(cell, this);
+            pvm.unlinkConstraint(cell, this,lastOpinions.get(cell));
         }
         lastOpinions.clear();
     }
@@ -91,7 +95,7 @@ public abstract class Constraint implements IConstraint {
         List<Cell> cells = this.pvm.getCellsForConstraint(this);
         for (Cell cell : cells) {
 
-            updateLastOpinion(cell, generateOpinions(cell));
+            updateLastOpinion(cell, generateInnerOpinions(cell), false);
         }
 
     }
@@ -103,21 +107,24 @@ public abstract class Constraint implements IConstraint {
      * @param newOpinionsForCell The new opinions for the cell
      * @return The updated map of opinions for the cell
      */
-    protected Map<Integer, Boolean> updateLastOpinion(Cell cell, Map<Integer, Boolean> newOpinionsForCell) {
+    protected Map<Integer, Boolean> updateLastOpinion(Cell cell, Map<Integer, Boolean> newOpinionsForCell,
+            Boolean wideReach) {
         Map<Integer, Boolean> lastOpinionsForCell = this.lastOpinions.computeIfAbsent(cell, k -> new HashMap<>());
         for (Map.Entry<Integer, Boolean> entry : newOpinionsForCell.entrySet()) {
             Integer value = entry.getKey();
-            Boolean newOpinion = entry.getValue();
-            Boolean oldOpinion = lastOpinionsForCell.get(value);
-            if ((oldOpinion == null && newOpinion != null)
-                    || (oldOpinion != null && !oldOpinion.equals(newOpinion))) {
-                updatePossibleValuesManager(cell, value, newOpinion);
-                lastOpinionsForCell.replace(value, newOpinion);
+            if (!cell.getPossibleValues().contains(value)) {
+                continue;
+            }
+            Boolean newOpinion = Boolean.TRUE.equals(entry.getValue());
+            Boolean oldOpinion = lastOpinionsForCell.computeIfAbsent(value, k -> false);
+            if (!oldOpinion.equals(newOpinion)) {
+                updatePossibleValuesManager(cell, value, newOpinion, wideReach);
+                lastOpinionsForCell.put(value, newOpinion);
 
             }
 
         }
-        this.lastOpinions.replace(cell, lastOpinionsForCell);
+        this.lastOpinions.put(cell, lastOpinionsForCell);
 
         return this.lastOpinions.get(cell);
     }
@@ -130,15 +137,16 @@ public abstract class Constraint implements IConstraint {
      * @param newValueOpinion The delta of the new opinion for the value
      * @return 1 if forbid 0 if allow -1 if no pvm
      */
-    protected Integer updatePossibleValuesManager(Cell cell, Integer value, Boolean newValueOpinion) {
+    protected Integer updatePossibleValuesManager(Cell cell, Integer value, Boolean newValueOpinion,
+            Boolean wideReach) {
         if (pvm == null) {
             return -1;
         }
         if (Boolean.TRUE.equals(newValueOpinion)) {
-            pvm.forbidCellValue(cell, value);
+            pvm.forbidCellValue(cell, value, wideReach);
             return 1;
         } else {
-            pvm.allowCellValue(cell, value);
+            pvm.allowCellValue(cell, value, wideReach);
             return 0;
         }
     }

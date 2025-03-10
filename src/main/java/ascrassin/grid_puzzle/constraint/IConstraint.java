@@ -25,26 +25,44 @@ public interface IConstraint {
      */
     boolean innerRulesPropagateCell(Cell cell, Integer oldValue);
 
-/**
- * Generates updated opinions for a cell based on its new value, considering previously calculated opinions,
- * without setting or storing these opinions. Instead, it returns potential future states.
- * @param targetCell The cell whose opinions need to be updated.
- * @param changedCell  The cell with the changed value
- * @param oldValue The previous value of the cell.
- * @param newValue The new Value of the cell
- *
- * @return A map of cell values to boolean opinions representing potential future states.
- */
-    public Map<Integer, Boolean> generateUpdatedOpinions(Cell targetCell, Cell changedCell, Integer oldValue, Integer newValue);
+    /**
+     * Propagates the Constraint to the cells in the subset by leveraging the VM Valid Values.
+     * Because a cell value or it's valid Values  was modified.
+     * This method is abstract and must be implemented by subclasses.
+     * 
+     * @param cell The cell whose value or ValidValues has changed.
+     * @param affectedValue The value that was affected.
+     * @return true if new Opinion was created and propagated
+     */
+    boolean wideReachRulesPossibleValues(Cell cell, Integer affectedValue);
 
-/**
- * Generates fresh opinions for a cell from scratch based on the current state of the puzzle,
- * without setting or storing these opinions.
- *
- * @param cell The cell whose opinions need to be recalculated.
- * @return A map of cell values to boolean opinions representing potential future states.
- */
-    public Map<Integer, Boolean> generateOpinions(Cell cell);
+    /**
+     * Generates updated opinions for a cell based on its new value, considering
+     * previously calculated opinions,
+     * without setting or storing these opinions. Instead, it returns potential
+     * future states.
+     * 
+     * @param targetCell  The cell whose opinions need to be updated.
+     * @param changedCell The cell with the changed value
+     * @param oldValue    The previous value of the cell.
+     * @param newValue    The new Value of the cell
+     *
+     * @return A map of cell values to boolean opinions representing potential
+     *         future states.
+     */
+    public Map<Integer, Boolean> generateUpdatedInnerOpinions(Cell targetCell, Cell changedCell, Integer oldValue,
+            Integer newValue);
+
+    /**
+     * Generates fresh opinions for a cell from scratch based on the current state
+     * of the puzzle,
+     * without setting or storing these opinions.
+     *
+     * @param cell The cell whose opinions need to be recalculated.
+     * @return A map of cell values to boolean opinions representing potential
+     *         future states.
+     */
+    public Map<Integer, Boolean> generateInnerOpinions(Cell cell);
 
     /**
      * Checks if the rule of the Constraint is broken.

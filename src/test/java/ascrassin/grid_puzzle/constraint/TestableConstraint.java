@@ -7,13 +7,17 @@ import java.util.Map;
 import ascrassin.grid_puzzle.kernel.Cell;
 import ascrassin.grid_puzzle.value_manager.PossibleValuesManager;
 
-
 /**
- * DO NOT USE :THIS IS ONLY FOR TESTING PURPOSES ON CONSTRAINT 
+ * DO NOT USE :THIS IS ONLY FOR TESTING PURPOSES ON CONSTRAINT
  */
 public class TestableConstraint extends Constraint {
     protected TestableConstraint(List<Cell> gridSubset, PossibleValuesManager pvm) {
         super(gridSubset, pvm);
+    }
+
+    @Override
+    public boolean wideReachRulesPossibleValues(Cell cell, Integer value) {
+        return false;
     }
 
     @Override
@@ -32,12 +36,13 @@ public class TestableConstraint extends Constraint {
     }
 
     @Override
-    public Map<Integer, Boolean> generateUpdatedOpinions(Cell targetCell, Cell changedCell, Integer oldValue, Integer newValue) {
+    public Map<Integer, Boolean> generateUpdatedInnerOpinions(Cell targetCell, Cell changedCell, Integer oldValue,
+            Integer newValue) {
         return new HashMap<>();
     }
 
     @Override
-    public Map<Integer, Boolean> generateOpinions(Cell cell) {
+    public Map<Integer, Boolean> generateInnerOpinions(Cell cell) {
         return new HashMap<>();
     }
 }

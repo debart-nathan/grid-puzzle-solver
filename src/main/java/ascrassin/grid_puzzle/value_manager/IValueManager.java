@@ -7,10 +7,10 @@ import java.util.Map;
 import java.util.Set;
 
 public interface IValueManager {
-    void linkConstraint(Cell cell,IConstraint constraint);
-    void unlinkConstraint(Cell cell, IConstraint constraint);
-    void allowCellValue(Cell cell, Integer value);
-    void forbidCellValue(Cell cell, Integer value);
+    void linkConstraint(Cell cell, IConstraint constraint, Map<Integer,Boolean> lastOpinion);
+    void unlinkConstraint(Cell cell, IConstraint constraint,Map<Integer,Boolean> lastOpinion);
+    void allowCellValue(Cell cell, Integer value, Boolean wideReach);
+    void forbidCellValue(Cell cell, Integer value, Boolean wideReach);
     Set<Integer> getValidValues(Cell cell);
     boolean canSetValue(Cell cell, Integer value);
     /**

@@ -44,9 +44,9 @@ class PossibleValuesManagerTest {
         when(testableConstraintMock.isRuleBroken()).thenReturn(false);
         when(testableConstraintMock.getSolvableCell()).thenReturn(null);
         when(testableConstraintMock.innerRulesPropagateCell(any(Cell.class), any(Integer.class))).thenReturn(false);
-        when(testableConstraintMock.generateUpdatedOpinions(any(Cell.class), any(Cell.class), any(Integer.class),
+        when(testableConstraintMock.generateUpdatedInnerOpinions(any(Cell.class), any(Cell.class), any(Integer.class),
                 any(Integer.class))).thenReturn(new HashMap<>());
-        when(testableConstraintMock.generateOpinions(any(Cell.class))).thenReturn(new HashMap<>());
+        when(testableConstraintMock.generateInnerOpinions(any(Cell.class))).thenReturn(new HashMap<>());
 
         manager = new PossibleValuesManager();
     }
@@ -84,8 +84,8 @@ class PossibleValuesManagerTest {
         @Test
         void testWithOneConstraint() {
             manager.initializeCell(cellMock1);
-            manager.allowCellValue(cellMock1, 1);
-            manager.linkConstraint(cellMock1,testableConstraintMock);
+            manager.allowCellValue(cellMock1, 1, false);
+            manager.linkConstraint(cellMock1,testableConstraintMock, null);
 
             manager.updateAllowedValues(cellMock1);
 
@@ -95,11 +95,11 @@ class PossibleValuesManagerTest {
 
         @Test
         void testWithMultipleConstraints() {
-            manager.linkConstraint(cellMock1,testableConstraintMock);
-            manager.linkConstraint(cellMock1,testableConstraintMock2);
-            manager.allowCellValue(cellMock1, 1);
-            manager.allowCellValue(cellMock1, 1);
-            manager.allowCellValue(cellMock1, 2);
+            manager.linkConstraint(cellMock1,testableConstraintMock, null);
+            manager.linkConstraint(cellMock1,testableConstraintMock2, null);
+            manager.allowCellValue(cellMock1, 1, false);
+            manager.allowCellValue(cellMock1, 1, false);
+            manager.allowCellValue(cellMock1, 2, false);
 
             manager.updateAllowedValues(cellMock1);
 
@@ -109,7 +109,7 @@ class PossibleValuesManagerTest {
 
         @Test
         void testEdgeCaseAfterReset() {
-            manager.linkConstraint(cellMock1,testableConstraintMock);
+            manager.linkConstraint(cellMock1,testableConstraintMock, null);
             manager.resetCell(cellMock1);
 
             manager.updateAllowedValues(cellMock1);
@@ -192,21 +192,21 @@ class PossibleValuesManagerTest {
 
         @Test
         void testLinkConstraint() {
-            manager.linkConstraint(cellMock1,testableConstraintMock);
+            manager.linkConstraint(cellMock1,testableConstraintMock,null);
             assertEquals(1, manager.getConstraintCount(cellMock1));
         }
 
         @Test
         void testLinkMultipleConstraints() {
-            manager.linkConstraint(cellMock1,testableConstraintMock);
-            manager.linkConstraint(cellMock1,testableConstraintMock2);
+            manager.linkConstraint(cellMock1,testableConstraintMock,null);
+            manager.linkConstraint(cellMock1,testableConstraintMock2,null);
             assertEquals(2, manager.getConstraintCount(cellMock1));
         }
 
         @Test
         void testLinkConstraintDifferentCells() {
-            manager.linkConstraint(cellMock1,testableConstraintMock);
-            manager.linkConstraint(cellMock2,testableConstraintMock2);
+            manager.linkConstraint(cellMock1,testableConstraintMock,null);
+            manager.linkConstraint(cellMock2,testableConstraintMock2,null);
             assertEquals(1, manager.getConstraintCount(cellMock1));
             assertEquals(1, manager.getConstraintCount(cellMock2));
         }
@@ -214,7 +214,7 @@ class PossibleValuesManagerTest {
         @Test
         void testLinkConstraintNullCell() {
             assertThrows(NullPointerException.class,
-                    () -> manager.linkConstraint(null,testableConstraintMock));
+                    () -> manager.linkConstraint(null,testableConstraintMock,null));
         }
     }
 
@@ -224,31 +224,31 @@ class PossibleValuesManagerTest {
 
         @Test
         void testUnlinkConstraint() {
-            manager.linkConstraint(cellMock1,testableConstraintMock);
-            manager.unlinkConstraint(cellMock1,testableConstraintMock);
+            manager.linkConstraint(cellMock1,testableConstraintMock, null);
+            manager.unlinkConstraint(cellMock1,testableConstraintMock,null );
             assertEquals(0, manager.getConstraintCount(cellMock1));
         }
 
         @Test
         void testUnlinkMultipleConstraints() {
-            manager.linkConstraint(cellMock1,testableConstraintMock);
-            manager.linkConstraint(cellMock1,testableConstraintMock2);
-            manager.unlinkConstraint(cellMock1,testableConstraintMock);
+            manager.linkConstraint(cellMock1,testableConstraintMock,null);
+            manager.linkConstraint(cellMock1,testableConstraintMock2,null);
+            manager.unlinkConstraint(cellMock1,testableConstraintMock,null);
             assertEquals(1, manager.getConstraintCount(cellMock1));
         }
 
         @Test
         void testUnlinkConstraintZeroTimes() {
             assertEquals(0, manager.getConstraintCount(cellMock1));
-            manager.unlinkConstraint(cellMock1,testableConstraintMock);
+            manager.unlinkConstraint(cellMock1,testableConstraintMock,null);
             assertEquals(0, manager.getConstraintCount(cellMock1));
         }
 
         @Test
         void testUnlinkConstraintDifferentCells() {
-            manager.linkConstraint(cellMock1,testableConstraintMock);
-            manager.linkConstraint(cellMock2,testableConstraintMock);
-            manager.unlinkConstraint(cellMock1,testableConstraintMock);
+            manager.linkConstraint(cellMock1,testableConstraintMock,null);
+            manager.linkConstraint(cellMock2,testableConstraintMock,null);
+            manager.unlinkConstraint(cellMock1,testableConstraintMock,null);
             assertEquals(0, manager.getConstraintCount(cellMock1));
             assertEquals(1, manager.getConstraintCount(cellMock2));
         }
@@ -256,7 +256,7 @@ class PossibleValuesManagerTest {
         @Test
         void testUnlinkConstraintNullCell() {
             assertThrows(NullPointerException.class,
-                    () -> manager.unlinkConstraint(null,testableConstraintMock));
+                    () -> manager.unlinkConstraint(null,testableConstraintMock,null));
         }
     }
 
@@ -266,7 +266,7 @@ class PossibleValuesManagerTest {
 
         @Test
         void testGetConstraintCount() {
-            manager.linkConstraint(cellMock1,testableConstraintMock);
+            manager.linkConstraint(cellMock1,testableConstraintMock,null);
             assertEquals(1, manager.getConstraintCount(cellMock1));
         }
 
@@ -277,8 +277,8 @@ class PossibleValuesManagerTest {
 
         @Test
         void testGetConstraintCountDifferentCells() {
-            manager.linkConstraint(cellMock1,testableConstraintMock);
-            manager.linkConstraint(cellMock2,testableConstraintMock);
+            manager.linkConstraint(cellMock1,testableConstraintMock,null);
+            manager.linkConstraint(cellMock2,testableConstraintMock,null);
             assertEquals(1, manager.getConstraintCount(cellMock1));
             assertEquals(1, manager.getConstraintCount(cellMock2));
         }
@@ -291,7 +291,7 @@ class PossibleValuesManagerTest {
         @Test
         void testAllowCellValue() {
             manager.initializeCell(cellMock1);
-            manager.allowCellValue(cellMock1, 1);
+            manager.allowCellValue(cellMock1, 1, false);
             Map<Integer, Integer> valueCounts = manager.getValueCounts(cellMock1);
             assertEquals(1, valueCounts.get(1).intValue());
         }
@@ -299,8 +299,8 @@ class PossibleValuesManagerTest {
         @Test
         void testAllowCellValueMultipleTimes() {
             manager.initializeCell(cellMock1);
-            manager.allowCellValue(cellMock1, 1);
-            manager.allowCellValue(cellMock1, 1);
+            manager.allowCellValue(cellMock1, 1, false);
+            manager.allowCellValue(cellMock1, 1, false);
             Map<Integer, Integer> valueCounts = manager.getValueCounts(cellMock1);
             assertEquals(2, valueCounts.get(1).intValue());
         }
@@ -309,8 +309,8 @@ class PossibleValuesManagerTest {
         void testAllowCellValueDifferentCells() {
             manager.initializeCell(cellMock1);
             manager.initializeCell(cellMock2);
-            manager.allowCellValue(cellMock1, 1);
-            manager.allowCellValue(cellMock2, 2);
+            manager.allowCellValue(cellMock1, 1, false);
+            manager.allowCellValue(cellMock2, 2, false);
             Map<Integer, Integer> cellMockCounts = manager.getValueCounts(cellMock1);
             Map<Integer, Integer> cellMock2Counts = manager.getValueCounts(cellMock2);
             assertEquals(1, cellMockCounts.get(1).intValue());
@@ -320,7 +320,7 @@ class PossibleValuesManagerTest {
         @Test
         void testAllowCellValueNullCell() {
             assertThrows(IllegalArgumentException.class,
-                    () -> manager.allowCellValue(null, 1));
+                    () -> manager.allowCellValue(null, 1, false));
         }
 
         @Test
@@ -329,13 +329,13 @@ class PossibleValuesManagerTest {
             when(unmanagedCell.getPossibleValues()).thenReturn(Set.of(1, 2, 3));
 
             assertThrows(IllegalArgumentException.class,
-                    () -> manager.allowCellValue(unmanagedCell, 1));
+                    () -> manager.allowCellValue(unmanagedCell, 1, false));
         }
 
         @Test
         void testAllowCellValueNotAllowedValue() {
             assertThrows(IllegalArgumentException.class,
-                    () -> manager.allowCellValue(cellMock1, 4));
+                    () -> manager.allowCellValue(cellMock1, 4, false));
         }
     }
 
@@ -346,8 +346,8 @@ class PossibleValuesManagerTest {
         @Test
         void testForbidCellValue() {
             manager.initializeCell(cellMock1);
-            manager.allowCellValue(cellMock1, 1);
-            manager.forbidCellValue(cellMock1, 1);
+            manager.allowCellValue(cellMock1, 1, false);
+            manager.forbidCellValue(cellMock1, 1, false);
             Map<Integer, Integer> valueCounts = manager.getValueCounts(cellMock1);
             assertEquals(0, valueCounts.get(1).intValue());
         }
@@ -355,9 +355,9 @@ class PossibleValuesManagerTest {
         @Test
         void testForbidCellValueMultipleTimes() {
             manager.initializeCell(cellMock1);
-            manager.allowCellValue(cellMock1, 1);
-            manager.forbidCellValue(cellMock1, 1);
-            manager.forbidCellValue(cellMock1, 1);
+            manager.allowCellValue(cellMock1, 1, false);
+            manager.forbidCellValue(cellMock1, 1, false);
+            manager.forbidCellValue(cellMock1, 1, false);
             Map<Integer, Integer> valueCounts = manager.getValueCounts(cellMock1);
             assertEquals(-1, valueCounts.get(1).intValue());
         }
@@ -366,9 +366,9 @@ class PossibleValuesManagerTest {
         void testForbidCellValueDifferentCells() {
             manager.initializeCell(cellMock1);
             manager.initializeCell(cellMock2);
-            manager.allowCellValue(cellMock1, 1);
-            manager.allowCellValue(cellMock2, 2);
-            manager.forbidCellValue(cellMock1, 1);
+            manager.allowCellValue(cellMock1, 1, false);
+            manager.allowCellValue(cellMock2, 2, false);
+            manager.forbidCellValue(cellMock1, 1, false);
             Map<Integer, Integer> cellMockCounts = manager.getValueCounts(cellMock1);
             Map<Integer, Integer> cellMock2Counts = manager.getValueCounts(cellMock2);
             assertEquals(0, cellMockCounts.get(1).intValue());
@@ -378,7 +378,7 @@ class PossibleValuesManagerTest {
         @Test
         void testForbidCellValueNullCell() {
             assertThrows(IllegalArgumentException.class,
-                    () -> manager.forbidCellValue(null, 1));
+                    () -> manager.forbidCellValue(null, 1, false));
         }
 
         @Test
@@ -387,14 +387,14 @@ class PossibleValuesManagerTest {
             when(unmanagedCell.getPossibleValues()).thenReturn(Set.of(1, 2, 3));
 
             assertThrows(IllegalArgumentException.class,
-                    () -> manager.forbidCellValue(unmanagedCell, 1));
+                    () -> manager.forbidCellValue(unmanagedCell, 1, false));
         }
 
         @Test
         void testForbidCellValueNotAllowedValue() {
             manager.initializeCell(cellMock1);
             assertThrows(IllegalArgumentException.class,
-                    () -> manager.forbidCellValue(cellMock1, 4));
+                    () -> manager.forbidCellValue(cellMock1, 4, false));
         }
     }
 
@@ -405,7 +405,7 @@ class PossibleValuesManagerTest {
         @Test
         void testGetValueCounts() {
             manager.initializeCell(cellMock1);
-            manager.allowCellValue(cellMock1, 1);
+            manager.allowCellValue(cellMock1, 1, false);
             Map<Integer, Integer> valueCounts = manager.getValueCounts(cellMock1);
             assertEquals(1, valueCounts.get(1).intValue());
         }
@@ -414,8 +414,8 @@ class PossibleValuesManagerTest {
         void testGetValueCountsDifferentCells() {
             manager.initializeCell(cellMock1);
             manager.initializeCell(cellMock2);
-            manager.allowCellValue(cellMock1, 1);
-            manager.allowCellValue(cellMock2, 2);
+            manager.allowCellValue(cellMock1, 1, false);
+            manager.allowCellValue(cellMock2, 2, false);
             Map<Integer, Integer> cellMockCounts = manager.getValueCounts(cellMock1);
             Map<Integer, Integer> cellMock2Counts = manager.getValueCounts(cellMock2);
             assertEquals(1, cellMockCounts.get(1).intValue());
@@ -430,8 +430,8 @@ class PossibleValuesManagerTest {
         @Test
         void testGetValidValues() {
             manager.initializeCell(cellMock1);
-            manager.allowCellValue(cellMock1, 1);
-            manager.forbidCellValue(cellMock1, 2);
+            manager.allowCellValue(cellMock1, 1, false);
+            manager.forbidCellValue(cellMock1, 2, false);
             Set<Integer> validValues = manager.getValidValues(cellMock1);
             assertEquals(2, validValues.size());
             assertTrue(validValues.contains(1));
@@ -449,10 +449,10 @@ class PossibleValuesManagerTest {
         void testGetValidValuesDifferentCells() {
             manager.initializeCell(cellMock1);
             manager.initializeCell(cellMock2);
-            manager.allowCellValue(cellMock1, 1);
-            manager.forbidCellValue(cellMock1, 2);
-            manager.allowCellValue(cellMock2, 2);
-            manager.forbidCellValue(cellMock2, 4);
+            manager.allowCellValue(cellMock1, 1, false);
+            manager.forbidCellValue(cellMock1, 2, false);
+            manager.allowCellValue(cellMock2, 2, false);
+            manager.forbidCellValue(cellMock2, 4, false);
             Set<Integer> cellMockValidValues = manager.getValidValues(cellMock1);
             Set<Integer> cellMock2ValidValues = manager.getValidValues(cellMock2);
             assertEquals(2, cellMockValidValues.size());
@@ -472,8 +472,8 @@ class PossibleValuesManagerTest {
         @Test
         void testCanSetValue() {
             manager.initializeCell(cellMock1);
-            manager.allowCellValue(cellMock1, 1);
-            manager.forbidCellValue(cellMock1, 2);
+            manager.allowCellValue(cellMock1, 1, false);
+            manager.forbidCellValue(cellMock1, 2, false);
             assertTrue(manager.canSetValue(cellMock1, 1));
             assertFalse(manager.canSetValue(cellMock1, 2));
         }
@@ -488,10 +488,10 @@ class PossibleValuesManagerTest {
         void testCanSetValueDifferentCells() {
             manager.initializeCell(cellMock1);
             manager.initializeCell(cellMock2);
-            manager.allowCellValue(cellMock1, 3);
-            manager.forbidCellValue(cellMock1, 2);
-            manager.allowCellValue(cellMock2, 2);
-            manager.forbidCellValue(cellMock2, 3);
+            manager.allowCellValue(cellMock1, 3, false);
+            manager.forbidCellValue(cellMock1, 2, false);
+            manager.allowCellValue(cellMock2, 2, false);
+            manager.forbidCellValue(cellMock2, 3, false);
             assertTrue(manager.canSetValue(cellMock1, 3));
             assertFalse(manager.canSetValue(cellMock1, 2));
             assertTrue(manager.canSetValue(cellMock2, 2));
@@ -506,9 +506,9 @@ class PossibleValuesManagerTest {
         @Test
         void testGetSolvableCell() {
             manager.initializeCell(cellMock1);
-            manager.linkConstraint(cellMock1,testableConstraintMock);
-            manager.forbidCellValue(cellMock1, 1);
-            manager.allowCellValue(cellMock1, 2);
+            manager.linkConstraint(cellMock1,testableConstraintMock,null);
+            manager.forbidCellValue(cellMock1, 1, false);
+            manager.allowCellValue(cellMock1, 2, false);
             Map.Entry<Cell, Integer> solvableCell = manager.getSolvableCell();
             assertNotNull(solvableCell);
             assertEquals(cellMock1, solvableCell.getKey());
@@ -518,9 +518,9 @@ class PossibleValuesManagerTest {
         @Test
         void testGetSolvableCellNoSolution() {
             manager.initializeCell(cellMock1);
-            manager.linkConstraint(cellMock1,testableConstraintMock);
-            manager.allowCellValue(cellMock1, 1);
-            manager.allowCellValue(cellMock1, 2);
+            manager.linkConstraint(cellMock1,testableConstraintMock,null);
+            manager.allowCellValue(cellMock1, 1, false);
+            manager.allowCellValue(cellMock1, 2, false);
             assertNull(manager.getSolvableCell());
         }
 
@@ -528,12 +528,11 @@ class PossibleValuesManagerTest {
         void testGetSolvableCellMultipleCells() {
             manager.initializeCell(cellMock1);
             manager.initializeCell(cellMock2);
-            manager.linkConstraint(cellMock1,testableConstraintMock);
-            manager.forbidCellValue(cellMock1, 3);
-            manager.allowCellValue(cellMock1, 2);
-            manager.linkConstraint(cellMock2,testableConstraintMock);
-            manager.forbidCellValue(cellMock2, 2);
-            manager.allowCellValue(cellMock2, 3);
+            manager.linkConstraint(cellMock1,testableConstraintMock,null);
+            manager.forbidCellValue(cellMock1, 3, false);
+            manager.linkConstraint(cellMock2,testableConstraintMock,null);
+            manager.forbidCellValue(cellMock2, 2, false);
+
 
             Map.Entry<Cell, Integer> solvableCell = manager.getSolvableCell();
 
@@ -559,7 +558,7 @@ class PossibleValuesManagerTest {
         @Test
         void testResetCell() {
             manager.initializeCell(cellMock1);
-            manager.linkConstraint(cellMock1,testableConstraintMock);
+            manager.linkConstraint(cellMock1,testableConstraintMock,null);
             manager.resetCell(cellMock1);
             assertEquals(0, manager.getConstraintCount(cellMock1));
             Map<Integer, Integer> initialCounts = new HashMap<>();
@@ -574,7 +573,7 @@ class PossibleValuesManagerTest {
         @Test
         void testResetCellMultipleTimes() {
             manager.initializeCell(cellMock1);
-            manager.linkConstraint(cellMock1,testableConstraintMock);
+            manager.linkConstraint(cellMock1,testableConstraintMock,null);
             manager.resetCell(cellMock1);
             manager.resetCell(cellMock1);
             assertEquals(0, manager.getConstraintCount(cellMock1));
@@ -591,8 +590,8 @@ class PossibleValuesManagerTest {
         void testResetCellDifferentCells() {
             manager.initializeCell(cellMock1);
             manager.initializeCell(cellMock2);
-            manager.linkConstraint(cellMock1,testableConstraintMock);
-            manager.linkConstraint(cellMock2,testableConstraintMock);
+            manager.linkConstraint(cellMock1,testableConstraintMock,null);
+            manager.linkConstraint(cellMock2,testableConstraintMock,null);
             manager.resetCell(cellMock2);
             assertEquals(1, manager.getConstraintCount(cellMock1));
             Map<Integer, Integer> initialCounts = new HashMap<>();

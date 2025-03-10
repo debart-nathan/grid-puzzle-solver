@@ -63,8 +63,8 @@ class ConstraintTest {
             when(pvm.getCellsForConstraint(constraint)).thenReturn(cells);
             constraint.cleanupConstraint();
 
-            verify(pvm).unlinkConstraint(cell1,constraint);
-            verify(pvm).unlinkConstraint(cell2,constraint);
+            verify(pvm).unlinkConstraint(cell1,constraint,null);
+            verify(pvm).unlinkConstraint(cell2,constraint,null);
         }
 
         @Test
@@ -87,25 +87,25 @@ class ConstraintTest {
         @Test
         void testUpdateLastOpinionUpdatesPossibleValuesManager() {
             Map<Integer, Boolean> opinions = new HashMap<>();
-            opinions.put(42, true);
+            opinions.put(2, true);
 
             Map<Cell, Map<Integer, Boolean>> lastOpinions = new HashMap<>();
             lastOpinions.put(cell1, opinions);
             constraint.lastOpinions = lastOpinions;
 
             Map<Integer, Boolean> newOpinions = new HashMap<>();
-            newOpinions.put(24, false);
+            newOpinions.put(2, false);
 
             reset(pvm);            
-            constraint.updateLastOpinion(cell1, newOpinions);
+            constraint.updateLastOpinion(cell1, newOpinions , false);
 
-            verify(pvm).allowCellValue(cell1, 24);
+            verify(pvm).allowCellValue(cell1, 2 , false);
         }
 
         @Test
         void testUpdateLastOpinionNotUpdateUnchangedOpinions() {
             Map<Integer, Boolean> opinions = new HashMap<>();
-            opinions.put(42, true);
+            opinions.put(1, true);
             opinions.put(41, false);
 
             Map<Cell, Map<Integer, Boolean>> lastOpinions = new HashMap<>();
@@ -113,63 +113,62 @@ class ConstraintTest {
             constraint.lastOpinions = lastOpinions;
 
             Map<Integer, Boolean> unchangedOpinions = new HashMap<>();
-            unchangedOpinions.put(42, true);
+            unchangedOpinions.put(1, true);
             unchangedOpinions.put(41, false);
 
             reset(pvm);
-            constraint.updateLastOpinion(cell1, unchangedOpinions);
-            verify(pvm, never()).allowCellValue(any(Cell.class), anyInt());
-            verify(pvm, never()).forbidCellValue(any(Cell.class), anyInt());
+            constraint.updateLastOpinion(cell1, unchangedOpinions, false);
+            verify(pvm, never()).allowCellValue(any(Cell.class), anyInt() , eq(false));
+            verify(pvm, never()).forbidCellValue(any(Cell.class), anyInt() , eq(false));
 
         }
 
         @Test
         void testUpdateLastOpinionChangesPositiveToNegative() {
             Map<Integer, Boolean> initialOpinions = new HashMap<>();
-            initialOpinions.put(42, true);
-            initialOpinions.put(24, false); // Add another value
+            initialOpinions.put(1, true);
+            initialOpinions.put(2, false); // Add another value
 
             Map<Cell, Map<Integer, Boolean>> lastOpinions = new HashMap<>();
             lastOpinions.put(cell1, initialOpinions);
             constraint.lastOpinions = lastOpinions;
 
             Map<Integer, Boolean> newOpinions = new HashMap<>();
-            newOpinions.put(42, false);
-            newOpinions.put(24, false);
+            newOpinions.put(1, false);
+            newOpinions.put(2, false);
 
             reset(pvm);
-            constraint.updateLastOpinion(cell1, newOpinions);
+            constraint.updateLastOpinion(cell1, newOpinions, false);
 
-            verify(pvm, never()).allowCellValue(eq(cell2), anyInt());
-            verify(pvm, never()).forbidCellValue(any(), anyInt());
-            verify(pvm, never()).allowCellValue(cell1, 24);
-
-            verify(pvm).allowCellValue(cell1, 42);
+            verify(pvm, never()).allowCellValue(eq(cell2), anyInt() , eq(false));
+            verify(pvm, never()).forbidCellValue(any(), anyInt() , eq(false));
+            verify(pvm, never()).allowCellValue(cell1, 2, false);
+            verify(pvm).allowCellValue(cell1, 1, false);
 
         }
 
         @Test
         void testUpdateLastOpinionChangesNegativeToPositive() {
             Map<Integer, Boolean> initialOpinions = new HashMap<>();
-            initialOpinions.put(42, false);
-            initialOpinions.put(24, true); // Add another value
+            initialOpinions.put(1, false);
+            initialOpinions.put(2, true); // Add another value
 
             Map<Cell, Map<Integer, Boolean>> lastOpinions = new HashMap<>();
             lastOpinions.put(cell1, initialOpinions);
             constraint.lastOpinions = lastOpinions;
 
             Map<Integer, Boolean> newOpinions = new HashMap<>();
-            newOpinions.put(42, true);
-            newOpinions.put(24, true);
+            newOpinions.put(1, true);
+            newOpinions.put(2, true);
 
             reset(pvm);
-            constraint.updateLastOpinion(cell1, newOpinions);
+            constraint.updateLastOpinion(cell1, newOpinions, false);
 
-            verify(pvm, never()).forbidCellValue(eq(cell2), anyInt());
-            verify(pvm, never()).allowCellValue(any(), anyInt());
-            verify(pvm, never()).forbidCellValue(cell1, 24);
+            verify(pvm, never()).forbidCellValue(eq(cell2), anyInt(), eq(false));
+            verify(pvm, never()).allowCellValue(any(), anyInt(), eq(false));
+            verify(pvm, never()).forbidCellValue(cell1, 2, false);
 
-            verify(pvm).forbidCellValue(cell1, 42);
+            verify(pvm).forbidCellValue(cell1, 1, false);
         }
     }
 

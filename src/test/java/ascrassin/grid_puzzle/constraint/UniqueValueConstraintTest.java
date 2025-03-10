@@ -200,9 +200,11 @@ class UniqueValueConstraintTest {
 
             Set<Integer> validValues2 = new HashSet<>();
             validValues2.add(3);
+            validValues2.add(4);
 
             Set<Integer> validValues3 = new HashSet<>();
             validValues3.add(3);
+            validValues2.add(4);
 
             when(pvm.getValidValues(cell1)).thenReturn(validValues1);
             when(pvm.getValidValues(cell2)).thenReturn(validValues2);
@@ -280,7 +282,7 @@ class UniqueValueConstraintTest {
             // Arrange
             Set<Integer> validValues1 = new HashSet<>();
             validValues1.add(1);
-            validValues1.add(2);
+            validValues1.add(3);
 
             Set<Integer> validValues2 = new HashSet<>();
             validValues2.add(3);
@@ -318,7 +320,7 @@ class UniqueValueConstraintTest {
             expectedOpinions.put(2, false);
             expectedOpinions.put(4, false);
 
-            Map<Integer, Boolean> actualOpinions = uvc.generateOpinions(cell1);
+            Map<Integer, Boolean> actualOpinions = uvc.generateInnerOpinions(cell1);
 
             assertEquals(expectedOpinions, actualOpinions);
         }
@@ -335,7 +337,7 @@ class UniqueValueConstraintTest {
             expectedOpinions.put(4, false);
 
             // Act
-            Map<Integer, Boolean> actualOpinions = uvc.generateOpinions(cell1);
+            Map<Integer, Boolean> actualOpinions = uvc.generateInnerOpinions(cell1);
 
             // Assert
             assertEquals(expectedOpinions, actualOpinions);
@@ -354,7 +356,7 @@ class UniqueValueConstraintTest {
             expectedOpinions.put(4, true);
 
             // Act
-            Map<Integer, Boolean> actualOpinions = uvc.generateOpinions(cell1);
+            Map<Integer, Boolean> actualOpinions = uvc.generateInnerOpinions(cell1);
 
             // Assert
             assertEquals(expectedOpinions, actualOpinions);
@@ -375,7 +377,7 @@ class UniqueValueConstraintTest {
             expectedOpinions.put(4, false);
             uvc.resetProp();
 
-            Map<Integer, Boolean> actualOpinions = uvc.generateUpdatedOpinions(cell1, cell1, null, null);
+            Map<Integer, Boolean> actualOpinions = uvc.generateUpdatedInnerOpinions(cell1, cell1, null, null);
 
             assertEquals(expectedOpinions, actualOpinions);
         }
@@ -393,7 +395,7 @@ class UniqueValueConstraintTest {
             uvc.resetProp();
 
             // Act
-            Map<Integer, Boolean> actualOpinions = uvc.generateUpdatedOpinions(cell1, cell1, null, null);
+            Map<Integer, Boolean> actualOpinions = uvc.generateUpdatedInnerOpinions(cell1, cell1, null, null);
 
             // Assert
             assertEquals(expectedOpinions, actualOpinions);
@@ -413,7 +415,7 @@ class UniqueValueConstraintTest {
             uvc.resetProp();
 
             // Act
-            Map<Integer, Boolean> actualOpinions = uvc.generateUpdatedOpinions(cell1, cell1, null, null);
+            Map<Integer, Boolean> actualOpinions = uvc.generateUpdatedInnerOpinions(cell1, cell1, null, null);
 
             // Assert
             assertEquals(expectedOpinions, actualOpinions);
@@ -432,12 +434,12 @@ class UniqueValueConstraintTest {
 
             // Assert
             assertFalse(result);
-            verify(pvm, atLeast(0)).forbidCellValue(eq(cell1), anyInt());
-            verify(pvm, atLeast(0)).allowCellValue(eq(cell1), anyInt());
-            verify(pvm, atLeast(0)).forbidCellValue(eq(cell2), anyInt());
-            verify(pvm, atLeast(0)).allowCellValue(eq(cell2), anyInt());
-            verify(pvm, atLeast(0)).forbidCellValue(eq(cell3), anyInt());
-            verify(pvm, atLeast(0)).allowCellValue(eq(cell3), anyInt());
+            verify(pvm, atLeast(0)).forbidCellValue(eq(cell1), anyInt(), eq(false));
+            verify(pvm, atLeast(0)).allowCellValue(eq(cell1), anyInt(), eq(false));
+            verify(pvm, atLeast(0)).forbidCellValue(eq(cell2), anyInt(), eq(false));
+            verify(pvm, atLeast(0)).allowCellValue(eq(cell2), anyInt(), eq(false));
+            verify(pvm, atLeast(0)).forbidCellValue(eq(cell3), anyInt(), eq(false));
+            verify(pvm, atLeast(0)).allowCellValue(eq(cell3), anyInt(), eq(false));
 
         }
 
@@ -453,12 +455,12 @@ class UniqueValueConstraintTest {
 
             // Assert
             assertFalse(result);
-            verify(pvm, atLeast(0)).forbidCellValue(eq(cell1), anyInt());
-            verify(pvm, atLeast(0)).allowCellValue(eq(cell1), anyInt());
-            verify(pvm, atLeast(0)).forbidCellValue(eq(cell2), anyInt());
-            verify(pvm, atLeast(0)).allowCellValue(eq(cell2), anyInt());
-            verify(pvm, atLeast(0)).forbidCellValue(eq(cell3), anyInt());
-            verify(pvm, atLeast(0)).allowCellValue(eq(cell3), anyInt());
+            verify(pvm, atLeast(0)).forbidCellValue(eq(cell1), anyInt(), eq(false));
+            verify(pvm, atLeast(0)).allowCellValue(eq(cell1), anyInt(), eq(false));
+            verify(pvm, atLeast(0)).forbidCellValue(eq(cell2), anyInt(), eq(false));
+            verify(pvm, atLeast(0)).allowCellValue(eq(cell2), anyInt(), eq(false));
+            verify(pvm, atLeast(0)).forbidCellValue(eq(cell3), anyInt(), eq(false));
+            verify(pvm, atLeast(0)).allowCellValue(eq(cell3), anyInt(), eq(false));
 
         }
 
@@ -476,18 +478,18 @@ class UniqueValueConstraintTest {
 
             // Assert
             assertTrue(result);
-            verify(pvm, atLeast(1)).forbidCellValue(cell1, 4);
-            verify(pvm, atLeast(1)).allowCellValue(cell1, 2);
-            verify(pvm, atLeast(1)).forbidCellValue(cell2, 4);
-            verify(pvm, atLeast(1)).allowCellValue(cell2, 2);
-            verify(pvm, atLeast(1)).forbidCellValue(cell3,4);
-            verify(pvm, atLeast(1)).allowCellValue(cell3, 2);
-            verify(pvm, atLeast(0)).forbidCellValue(eq(cell1), anyInt());
-            verify(pvm, atLeast(0)).allowCellValue(eq(cell1), anyInt());
-            verify(pvm, atLeast(0)).forbidCellValue(eq(cell2), anyInt());
-            verify(pvm, atLeast(0)).allowCellValue(eq(cell2), anyInt());
-            verify(pvm, atLeast(0)).forbidCellValue(eq(cell3), anyInt());
-            verify(pvm, atLeast(0)).allowCellValue(eq(cell3), anyInt());
+            verify(pvm, atLeast(1)).forbidCellValue(cell1, 4, false);
+            verify(pvm, atLeast(1)).allowCellValue(cell1, 2, false);
+            verify(pvm, atLeast(1)).forbidCellValue(cell2, 4, false);
+            verify(pvm, atLeast(1)).allowCellValue(cell2, 2, false);
+            verify(pvm, atLeast(1)).forbidCellValue(cell3,4, false);
+            verify(pvm, atLeast(1)).allowCellValue(cell3, 2, false);
+            verify(pvm, atLeast(0)).forbidCellValue(eq(cell1), anyInt(), eq(false));
+            verify(pvm, atLeast(0)).allowCellValue(eq(cell1), anyInt(), eq(false));
+            verify(pvm, atLeast(0)).forbidCellValue(eq(cell2), anyInt(), eq(false));
+            verify(pvm, atLeast(0)).allowCellValue(eq(cell2), anyInt(), eq(false));
+            verify(pvm, atLeast(0)).forbidCellValue(eq(cell3), anyInt(), eq(false));
+            verify(pvm, atLeast(0)).allowCellValue(eq(cell3), anyInt(), eq(false));
         }
     }
 
