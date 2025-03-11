@@ -84,27 +84,25 @@ class PossibleValuesManagerTest {
         @Test
         void testWithOneConstraint() {
             manager.initializeCell(cellMock1);
-            manager.allowCellValue(cellMock1, 1, false);
+            manager.forbidCellValue(cellMock1, 1, false);
             manager.linkConstraint(cellMock1,testableConstraintMock, null);
 
             manager.updateAllowedValues(cellMock1);
 
             Set<Integer> allowedValues = manager.getAllowedValues().get(cellMock1);
-            assertEquals(Set.of(1), allowedValues);
+            assertEquals(Set.of(2,3), allowedValues);
         }
 
         @Test
         void testWithMultipleConstraints() {
             manager.linkConstraint(cellMock1,testableConstraintMock, null);
             manager.linkConstraint(cellMock1,testableConstraintMock2, null);
-            manager.allowCellValue(cellMock1, 1, false);
-            manager.allowCellValue(cellMock1, 1, false);
-            manager.allowCellValue(cellMock1, 2, false);
+            manager.forbidCellValue(cellMock1, 1, false);
 
             manager.updateAllowedValues(cellMock1);
 
             Set<Integer> allowedValues = manager.getAllowedValues().get(cellMock1);
-            assertEquals(Set.of(1), allowedValues);
+            assertEquals(Set.of(2,3), allowedValues);
         }
 
         @Test
@@ -508,7 +506,7 @@ class PossibleValuesManagerTest {
             manager.initializeCell(cellMock1);
             manager.linkConstraint(cellMock1,testableConstraintMock,null);
             manager.forbidCellValue(cellMock1, 1, false);
-            manager.allowCellValue(cellMock1, 2, false);
+            manager.forbidCellValue(cellMock1, 3, false);
             Map.Entry<Cell, Integer> solvableCell = manager.getSolvableCell();
             assertNotNull(solvableCell);
             assertEquals(cellMock1, solvableCell.getKey());
@@ -519,8 +517,6 @@ class PossibleValuesManagerTest {
         void testGetSolvableCellNoSolution() {
             manager.initializeCell(cellMock1);
             manager.linkConstraint(cellMock1,testableConstraintMock,null);
-            manager.allowCellValue(cellMock1, 1, false);
-            manager.allowCellValue(cellMock1, 2, false);
             assertNull(manager.getSolvableCell());
         }
 
@@ -529,9 +525,11 @@ class PossibleValuesManagerTest {
             manager.initializeCell(cellMock1);
             manager.initializeCell(cellMock2);
             manager.linkConstraint(cellMock1,testableConstraintMock,null);
+            manager.forbidCellValue(cellMock1, 1, false);
             manager.forbidCellValue(cellMock1, 3, false);
             manager.linkConstraint(cellMock2,testableConstraintMock,null);
             manager.forbidCellValue(cellMock2, 2, false);
+            manager.forbidCellValue(cellMock2, 4, false);
 
 
             Map.Entry<Cell, Integer> solvableCell = manager.getSolvableCell();
@@ -596,11 +594,11 @@ class PossibleValuesManagerTest {
             assertEquals(1, manager.getConstraintCount(cellMock1));
             Map<Integer, Integer> initialCounts = new HashMap<>();
             for (Integer value : cellMock1.getPossibleValues()) {
-                initialCounts.put(value, 0);
+                initialCounts.put(value, 1);
             }
             assertEquals(manager.getValueCounts(cellMock1), initialCounts);
             Set<Integer> allowedValues = manager.getAllowedValues().get(cellMock1);
-            assertEquals(Set.of(), allowedValues);
+            assertEquals(Set.of(1,2,3), allowedValues);
             assertEquals(0, manager.getConstraintCount(cellMock2));
             Map<Integer, Integer> initialCounts2 = new HashMap<>();
             for (Integer value : cellMock2.getPossibleValues()) {
