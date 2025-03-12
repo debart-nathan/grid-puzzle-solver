@@ -5,6 +5,10 @@ import ascrassin.grid_puzzle.kernel.*;
 import ascrassin.grid_puzzle.value_manager.*;
 import ascrassin.grid_puzzle.puzzle_factory.*;
 import ascrassin.grid_puzzle.puzzle_factory.SudokuFactory.SudokuInfo;
+import ascrassin.grid_puzzle.solver.HumanSolver;
+import ascrassin.grid_puzzle.solver.ISolver;
+import ascrassin.grid_puzzle.solver.RuleSolver;
+import ascrassin.grid_puzzle.solver.ValidValueSolver;
 import ascrassin.grid_puzzle.constraint.*;
 
 public class App {
@@ -43,7 +47,7 @@ public class App {
         System.out.println("Sudoku before solving:");
         logSudoku(sudoku);
 
-        Solver solver = new Solver(sudoku, constraints, pvm);
+        ISolver solver = new RuleSolver(sudoku, constraints, pvm);
         boolean isSolved = solver.solve();
 
         // Log the Sudoku after solving

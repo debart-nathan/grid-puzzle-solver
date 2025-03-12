@@ -1,20 +1,26 @@
-package ascrassin.grid_puzzle.kernel;
+package ascrassin.grid_puzzle.solver;
 
 import ascrassin.grid_puzzle.constraint.IConstraint;
+import ascrassin.grid_puzzle.kernel.Cell;
+import ascrassin.grid_puzzle.kernel.Grid;
 import ascrassin.grid_puzzle.value_manager.IValueManager;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 
-
-public class Solver {
+/**
+ * HumanSolver class is responsible for solving the Sudoku puzzle using human-like strategies.
+ * It tries to solve the puzzle by applying constraints and value managers.
+ * 
+ */
+public class HumanSolver implements ISolver {
 
     private Grid grid;
     private List<IConstraint> constraints;
     private IValueManager valueManager;
     private boolean solved;
 
-    public Solver(Grid grid, List<IConstraint> constraints, IValueManager valueManager) {
+    public HumanSolver(Grid grid, List<IConstraint> constraints, IValueManager valueManager) {
         this.grid = grid;
         this.constraints = constraints;
         this.valueManager = valueManager;
