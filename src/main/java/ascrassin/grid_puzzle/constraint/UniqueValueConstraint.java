@@ -17,23 +17,6 @@ public class UniqueValueConstraint extends Constraint {
         super(gridSubset, pvm);
     }
 
-    @Override
-    public boolean innerRulesPropagateCell(Cell cell, Integer oldValue) {
-        if (!pvm.getCellsForConstraint(this).contains(cell)) {
-            return false;
-        }
-
-        if ((oldValue == null && cell.getValue() != null) ||
-                (oldValue != null && !oldValue.equals(cell.getValue()))) {
-            // Generate updated opinions for the cell
-            for (Cell c : pvm.getCellsForConstraint(this)) {
-                Map<Integer, Boolean> newOpinions = generateUpdatedInnerOpinions(c, cell, oldValue, cell.getValue());
-                updateLastOpinion(c, newOpinions, false);
-            }
-            return true;
-        }
-        return false;
-    }
 
     @Override
     public boolean wideReachRulesPossibleValues(Cell cell, Integer affectedValue) {
