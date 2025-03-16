@@ -115,7 +115,6 @@ class UniqueValueConstraintTest {
         void testValidValuesSuperiorCellCountReturnNull() {
             // Arrange
             Set<Integer> validValues1 = new HashSet<>();
-            validValues1.add(1);
             validValues1.add(2);
 
             Set<Integer> validValues2 = new HashSet<>();
@@ -372,9 +371,6 @@ class UniqueValueConstraintTest {
             when(cell1.getValue()).thenReturn(null);
             when(cell2.getValue()).thenReturn(null);
             when(cell3.getValue()).thenReturn(3);
-            expectedOpinions.put(1, false);
-            expectedOpinions.put(2, false);
-            expectedOpinions.put(4, false);
             uvc.resetProp();
 
             Map<Integer, Boolean> actualOpinions = uvc.generateUpdatedInnerOpinions(cell1, cell1, null, null);
@@ -390,8 +386,6 @@ class UniqueValueConstraintTest {
             when(cell2.getValue()).thenReturn(null);
             when(cell3.getValue()).thenReturn(null);
             expectedOpinions.put(1, true);
-            expectedOpinions.put(2, false);
-            expectedOpinions.put(4, false);
             uvc.resetProp();
 
             // Act

@@ -6,43 +6,37 @@ import net.objecthunter.exp4j.Expression;
 import net.objecthunter.exp4j.ExpressionBuilder;
 
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Function;
 
-/**
- * Represents a constraint based on a mathematical equation or inequality.
- * The equation is passed as a string, and variables are represented as [Xi],
- * where i is the index of the cell in the grid subset.
- * This constraint generates all valid combinations of values that satisfy the
- * equation and forbids values that are not part of any valid combination.
- */
 public class EquationConstraint extends Constraint {
 
     private final String equation; // The equation or inequality (e.g., "[X1] + [X2] == 10")
+    private final Map<List<Integer>, Boolean> equationCache = new ConcurrentHashMap<>(); // Cache for equation
+                                                                                         // evaluations
+    private final Map<List<Cell>, List<Map<Cell, Integer>>> combinationCache = new ConcurrentHashMap<>(); // Cache for
+                                                                                                          // valid
+                                                                                                          // combinations
 
-    /**
-     * Constructs a new EquationConstraint instance.
-     *
-     * @param gridSubset The list of cells this constraint applies to.
-     * @param pvm        The PossibleValuesManager to interface with.
-     * @param equation   The equation or inequality as a string (e.g., "[X1] + [X2]
-     *                   == 10").
-     */
     public EquationConstraint(List<Cell> gridSubset, PossibleValuesManager pvm, String equation) {
         super(gridSubset, pvm);
-        this.equation = equation;
+        this.equation = Objects.requireNonNull(equation, "Equation cannot be null");
     }
 
     @Override
     public boolean innerRulesPropagateCell(Cell cell, Integer oldValue) {
-        if (!pvm.getCellsForConstraint(this).contains(cell)) {
+        List<Cell> cells = pvm.getCellsForConstraint(this);
+        if (!cells.contains(cell)) {
             return false;
         }
 
-        if ((oldValue == null && cell.getValue() != null) ||
-                (oldValue != null && !oldValue.equals(cell.getValue()))) {
+        if ((oldValue == null && cell.getValue() != null) || (oldValue != null && !oldValue.equals(cell.getValue()))) {
+            // Invalidate the cache when a cell's value changes
+            combinationCache.clear();
+            equationCache.clear();
 
             Map<Cell, Map<Integer, Boolean>> newOpinions = generateFullInnerOpinions();
-            for (Cell c : pvm.getCellsForConstraint(this)) {
+            for (Cell c : cells) {
                 updateLastOpinion(c, newOpinions.get(c), false);
             }
             return true;
@@ -57,6 +51,10 @@ public class EquationConstraint extends Constraint {
             return;
         }
 
+        // Invalidate the cache when resetting
+        combinationCache.clear();
+        equationCache.clear();
+
         List<Cell> cells = this.pvm.getCellsForConstraint(this);
         Map<Cell, Map<Integer, Boolean>> newOpinions = generateFullInnerOpinions();
         for (Cell cell : cells) {
@@ -64,41 +62,30 @@ public class EquationConstraint extends Constraint {
         }
     }
 
-    /**
-     * Generates opinions for all cells in the grid subset based on the equation.
-     *
-     * @return A map of cells to their respective opinions (allowed or forbidden
-     *         values).
-     */
-    public Map<Cell, Map<Integer, Boolean>> generateFullInnerOpinions() {
-        return generateOpinions(cell -> cell.getPossibleValues());
-    }
-
-    /**
-     * Checks if the rule is broken by evaluating all valid combinations of values.
-     *
-     * @return true if the rule is broken, false otherwise.
-     */
     @Override
     public boolean isRuleBroken() {
         List<Cell> cells = pvm.getCellsForConstraint(this);
-        List<Map<Cell, Integer>> validCombinations = generateCombinations(cells, cell -> pvm.getValidValues(cell));
+        List<Map<Cell, Integer>> validCombinations = generateCombinations(cells, pvm::getValidValues);
         return validCombinations.isEmpty();
     }
 
-    /**
-     * Helper method to generate opinions or check rule validity based on a value
-     * supplier.
-     *
-     * @param valueSupplier A function that provides the valid values for a cell.
-     * @return A map of cells to their respective opinions (allowed or forbidden
-     *         values).
-     */
+    @Override
+    public Map<Integer, Boolean> generateInnerOpinions(Cell cell) {
+        Map<Cell, Map<Integer, Boolean>> fullOpinions = generateFullInnerOpinions();
+        return fullOpinions.getOrDefault(cell, new HashMap<>());
+    }
+
+    private Map<Cell, Map<Integer, Boolean>> generateFullInnerOpinions() {
+        return generateOpinions(Cell::getPossibleValues);
+    }
+
     private Map<Cell, Map<Integer, Boolean>> generateOpinions(Function<Cell, Set<Integer>> valueSupplier) {
         Map<Cell, Map<Integer, Boolean>> fullOpinions = new HashMap<>();
-
         List<Cell> cells = pvm.getCellsForConstraint(this);
-        List<Map<Cell, Integer>> validCombinations = generateCombinations(cells, valueSupplier);
+
+        // Generate valid combinations (use cache if available)
+        List<Map<Cell, Integer>> validCombinations = combinationCache.computeIfAbsent(cells,
+                k -> generateCombinations(cells, valueSupplier));
 
         // Track which values are part of at least one valid combination
         Map<Cell, Set<Integer>> validValues = new HashMap<>();
@@ -129,14 +116,6 @@ public class EquationConstraint extends Constraint {
         return fullOpinions;
     }
 
-    /**
-     * Generates all valid combinations of values that satisfy the equation.
-     *
-     * @param cells         The list of cells in the grid subset.
-     * @param valueSupplier A function that provides the valid values for a cell.
-     * @return A list of maps, where each map represents a valid combination of cell
-     *         values.
-     */
     private List<Map<Cell, Integer>> generateCombinations(List<Cell> cells,
             Function<Cell, Set<Integer>> valueSupplier) {
         List<Map<Cell, Integer>> validCombinations = new ArrayList<>();
@@ -152,21 +131,13 @@ public class EquationConstraint extends Constraint {
         return validCombinations;
     }
 
-    /**
-     * Recursively generates all valid combinations of values that satisfy the
-     * equation.
-     *
-     * @param cells             The list of cells in the grid subset.
-     * @param baseValues        A map of cells to their valid values.
-     * @param index             The current index in the cells list.
-     * @param currentCombo      The current combination of cell values being built.
-     * @param validCombinations The list of all valid combinations.
-     */
     private void generateCombinationsRecursive(List<Cell> cells, Map<Cell, Set<Integer>> baseValues, int index,
             Map<Cell, Integer> currentCombo, List<Map<Cell, Integer>> validCombinations) {
         if (index == cells.size()) {
-            String substitutedEquation = substituteCombinationIntoEquation(cells, currentCombo);
-            if (evaluateEquation(substitutedEquation)) {
+            // Check if the combination is already cached
+            List<Integer> comboValues = new ArrayList<>(currentCombo.values());
+            boolean isValid = equationCache.computeIfAbsent(comboValues, k -> evaluateCombination(cells, currentCombo));
+            if (isValid) {
                 validCombinations.add(new HashMap<>(currentCombo));
             }
             return;
@@ -187,13 +158,11 @@ public class EquationConstraint extends Constraint {
         }
     }
 
-    /**
-     * Substitutes a combination of cell values into the equation.
-     *
-     * @param cells       The list of cells in the grid subset.
-     * @param combination The combination of cell values to substitute.
-     * @return The equation with cell values substituted.
-     */
+    private boolean evaluateCombination(List<Cell> cells, Map<Cell, Integer> combination) {
+        String substitutedEquation = substituteCombinationIntoEquation(cells, combination);
+        return evaluateEquation(substitutedEquation);
+    }
+
     private String substituteCombinationIntoEquation(List<Cell> cells, Map<Cell, Integer> combination) {
         String substitutedEquation = equation;
 
@@ -207,12 +176,6 @@ public class EquationConstraint extends Constraint {
         return substitutedEquation;
     }
 
-    /**
-     * Evaluates the equation or inequality.
-     *
-     * @param equation The equation or inequality as a string.
-     * @return true if the equation is satisfied, false otherwise.
-     */
     private boolean evaluateEquation(String equation) {
         // Split the equation into left-hand side (LHS) and right-hand side (RHS)
         String[] parts = equation.split("[><=]+");
@@ -246,13 +209,5 @@ public class EquationConstraint extends Constraint {
         } else {
             throw new IllegalArgumentException("Unsupported operator in equation: " + equation);
         }
-    }
-
-    @Override
-    public Map<Integer, Boolean> generateInnerOpinions(Cell cell) {
-        // Delegate to generateFullInnerOpinions and return the opinions for the
-        // specific cell
-        Map<Cell, Map<Integer, Boolean>> fullOpinions = generateFullInnerOpinions();
-        return fullOpinions.getOrDefault(cell, new HashMap<>());
     }
 }

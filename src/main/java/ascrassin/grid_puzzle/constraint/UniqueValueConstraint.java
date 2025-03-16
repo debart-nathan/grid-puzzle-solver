@@ -4,19 +4,21 @@ import ascrassin.grid_puzzle.kernel.*;
 import ascrassin.grid_puzzle.value_manager.*;
 
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
-/**
- * Represents a unique value constraint in a grid puzzle solver.
- * This constraint ensures that each cell in the puzzle grid contains a unique
- * value.
- */
 public class UniqueValueConstraint extends Constraint {
+
+    private final Map<List<Cell>, Map<Cell, Map<Integer, Boolean>>> ruleCache = new ConcurrentHashMap<>(); // Cache for
+                                                                                                           // Hidden/Naked
+                                                                                                           // N rules
+    private final Map<List<Cell>, Map<Integer, List<List<Cell>>>> combinationCache = new ConcurrentHashMap<>(); // Cache
+                                                                                                                // for
+                                                                                                                // combinations
 
     public UniqueValueConstraint(List<Cell> gridSubset, PossibleValuesManager pvm) {
         super(gridSubset, pvm);
     }
-
 
     @Override
     public boolean wideReachRulesPossibleValues(Cell cell, Integer affectedValue) {
@@ -30,6 +32,11 @@ public class UniqueValueConstraint extends Constraint {
                 .filter(c -> !c.isSolved())
                 .toList();
 
+        // Early exit if no unsolved cells
+        if (unsolvedCells.isEmpty()) {
+            return false;
+        }
+
         // Get all distinct valid values in the unsolved cells
         Set<Integer> allValidValues = unsolvedCells.stream()
                 .flatMap(c -> pvm.getValidValues(c).stream())
@@ -40,18 +47,16 @@ public class UniqueValueConstraint extends Constraint {
             return false;
         }
 
-        // Create a defensive copy of lastOpinions
-        Map<Cell, Map<Integer, Boolean>> newOpinions = new HashMap<>();
-        for (Map.Entry<Cell, Map<Integer, Boolean>> entry : this.lastOpinions.entrySet()) {
-            newOpinions.put(entry.getKey(), new HashMap<>(entry.getValue()));
-        }
-
         // Precompute valid values for all unsolved cells
         Map<Cell, Set<Integer>> validValuesMap = unsolvedCells.stream()
                 .collect(Collectors.toMap(c -> c, pvm::getValidValues));
 
-        // Apply Hidden N and Naked N Rules
-        applyHiddenAndNakedNRules(newOpinions, unsolvedCells, validValuesMap);
+        // Apply Hidden N and Naked N Rules (use cache if available)
+        Map<Cell, Map<Integer, Boolean>> newOpinions = ruleCache.computeIfAbsent(unsolvedCells, k -> {
+            Map<Cell, Map<Integer, Boolean>> opinions = new HashMap<>();
+            applyHiddenAndNakedNRules(opinions, unsolvedCells, validValuesMap);
+            return opinions;
+        });
 
         // Update last opinions
         for (Map.Entry<Cell, Map<Integer, Boolean>> entry : newOpinions.entrySet()) {
@@ -61,9 +66,6 @@ public class UniqueValueConstraint extends Constraint {
         return true;
     }
 
-    /**
-     * Applies both Hidden N and Naked N rules to reduce possible values.
-     */
     private void applyHiddenAndNakedNRules(Map<Cell, Map<Integer, Boolean>> newOpinions,
             List<Cell> unsolvedCells,
             Map<Cell, Set<Integer>> validValuesMap) {
@@ -72,8 +74,15 @@ public class UniqueValueConstraint extends Constraint {
 
         // Iterate over all possible combination sizes
         for (int combinationSize = 2; combinationSize <= maxCombinationSize; combinationSize++) {
-            // Generate all possible combinations of cells for the current size
-            List<List<Cell>> combinations = generateCombinations(unsolvedCells, combinationSize);
+            // Create a final copy of combinationSize for use in the lambda
+            final int finalCombinationSize = combinationSize;
+
+            // Generate all possible combinations of cells for the current size (use cache
+            // if available)
+            List<List<Cell>> combinations = combinationCache
+                    .computeIfAbsent(unsolvedCells, k -> new HashMap<>())
+                    .computeIfAbsent(finalCombinationSize,
+                            k -> generateCombinations(unsolvedCells, finalCombinationSize));
 
             // Process each combination
             for (List<Cell> combination : combinations) {
@@ -89,27 +98,25 @@ public class UniqueValueConstraint extends Constraint {
                         .flatMap(cell -> validValuesMap.getOrDefault(cell, Collections.emptySet()).stream())
                         .collect(Collectors.toSet());
 
-                // Calculate remaining valid values after removing values from other
-                // cells
+                // Calculate remaining valid values after removing values from other cells
                 Set<Integer> remainingValidValues = new HashSet<>(validValuesInCombination);
                 remainingValidValues.removeAll(valuesToRemove);
 
-                // If the remaining valid values match the combination size, apply the
-                // Hidden N rule
+                // If the remaining valid values match the combination size, apply the Hidden N
+                // rule
                 if (remainingValidValues.size() == combination.size()) {
-                    // forbid other values in the combination
+                    // Forbid other values in the combination
                     combination.forEach(cell -> valuesToRemove.forEach(
-                            value -> newOpinions.computeIfAbsent(cell, k -> new HashMap<>()).replace(value, true)));
+                            value -> newOpinions.computeIfAbsent(cell, k -> new HashMap<>()).put(value, true)));
                 }
 
                 // Naked N rule
                 // Check if the number of valid values matches the combination size
                 if (validValuesInCombination.size() == combination.size()) {
-                    // forbid the values outside the combination
+                    // Forbid the values outside the combination
                     validValuesInCombination.forEach(value -> unsolvedCells.stream()
                             .filter(cell -> !combination.contains(cell)) // Exclude cells in the combination
-                            .forEach(cell -> newOpinions.computeIfAbsent(cell, k -> new HashMap<>()).replace(value,
-                                    true)));
+                            .forEach(cell -> newOpinions.computeIfAbsent(cell, k -> new HashMap<>()).put(value, true)));
                 }
             }
         }
@@ -161,12 +168,13 @@ public class UniqueValueConstraint extends Constraint {
     @Override
     public Map<Integer, Boolean> generateUpdatedInnerOpinions(Cell targetCell, Cell changedCell, Integer oldValue,
             Integer newValue) {
-        if (targetCell == null || changedCell == null || this.lastOpinions == null) {
-            throw new IllegalArgumentException("Arguments cannot be null");
+        if (targetCell == null || changedCell == null) {
+            throw new IllegalArgumentException("Target cell and changed cell cannot be null");
         }
 
         Set<Integer> possibleValues = targetCell.getPossibleValues();
-        Map<Integer, Boolean> newOpinion = new HashMap<>(this.lastOpinions.get(targetCell));
+        Map<Integer, Boolean> newOpinion = new HashMap<>(
+                this.lastOpinions.getOrDefault(targetCell, Collections.emptyMap()));
 
         if (newValue != null && possibleValues.contains(newValue)) {
             newOpinion.put(newValue, true);
@@ -183,8 +191,8 @@ public class UniqueValueConstraint extends Constraint {
 
     @Override
     public Map<Integer, Boolean> generateInnerOpinions(Cell cell) {
-        Map<Integer, Boolean> newOpinions = new HashMap<>();
         Set<Integer> possibleValues = cell.getPossibleValues();
+        Map<Integer, Boolean> newOpinions = new HashMap<>(possibleValues.size());
 
         possibleValues.forEach(value -> {
             boolean isPresent = pvm.getCellsForConstraint(this).stream()
@@ -198,13 +206,12 @@ public class UniqueValueConstraint extends Constraint {
     @Override
     public boolean isRuleBroken() {
         List<Cell> cells = pvm.getCellsForConstraint(this);
-        Set<Integer> uniqueValues = new HashSet<>();
+        Set<Integer> uniqueValues = new HashSet<>(cells.size());
 
         for (Cell cell : cells) {
             Integer cellValue = cell.getValue();
             if (cellValue != null && !uniqueValues.add(cellValue)) {
                 return true; // Found a duplicate value
-
             }
         }
 
@@ -221,23 +228,21 @@ public class UniqueValueConstraint extends Constraint {
             return null;
         }
 
-        Map<Cell, Set<Integer>> cellValidValues = new HashMap<>();
-        Set<Integer> allUniqueValues = new HashSet<>();
+        // Precompute valid values for all unsolved cells
+        Map<Cell, Set<Integer>> cellValidValues = unsolvedCells.stream()
+                .collect(Collectors.toMap(c -> c, pvm::getValidValues));
 
-        for (Cell cell : unsolvedCells) {
-            Set<Integer> validValues = pvm.getValidValues(cell);
-            cellValidValues.put(cell, validValues);
-            allUniqueValues.addAll(validValues);
-        }
+        // Get all distinct valid values across all unsolved cells
+        Set<Integer> allValidValues = cellValidValues.values().stream()
+                .flatMap(Set::stream)
+                .collect(Collectors.toSet());
 
-        if (allUniqueValues.size() != unsolvedCells.size()) {
+        // If the number of distinct valid values is greater than the number of unsolved
+        // cells, return null
+        if (allValidValues.size() > unsolvedCells.size()) {
             return null;
         }
 
-        return findHiddenSingle(cellValidValues);
-    }
-
-    private Map.Entry<Cell, Integer> findHiddenSingle(Map<Cell, Set<Integer>> cellValidValues) {
         // Count how many times each value appears across all cells
         Map<Integer, Integer> valueCounts = new HashMap<>();
         for (Set<Integer> values : cellValidValues.values()) {

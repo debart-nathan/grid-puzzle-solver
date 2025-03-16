@@ -16,30 +16,10 @@ public class TestableConstraint extends Constraint {
     }
 
     @Override
-    public boolean wideReachRulesPossibleValues(Cell cell, Integer value) {
-        return false;
-    }
-
-    @Override
     public boolean isRuleBroken() {
         return false;
     }
 
-    @Override
-    public Map.Entry<Cell, Integer> getSolvableCell() {
-        return null;
-    }
-
-    @Override
-    public boolean innerRulesPropagateCell(Cell cell, Integer oldValue) {
-        return false;
-    }
-
-    @Override
-    public Map<Integer, Boolean> generateUpdatedInnerOpinions(Cell targetCell, Cell changedCell, Integer oldValue,
-            Integer newValue) {
-        return new HashMap<>();
-    }
 
     @Override
     public Map<Integer, Boolean> generateInnerOpinions(Cell cell) {
