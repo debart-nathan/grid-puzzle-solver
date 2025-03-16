@@ -54,8 +54,6 @@ public abstract class Constraint implements IConstraint {
             this.lastOpinions.put(cell, lastOpinionsForCell);
             pvm.linkConstraint(cell, this, lastOpinionsForCell);
 
-            
-
             cell.addLinkedValueManager(pvm);
 
         }
@@ -71,7 +69,7 @@ public abstract class Constraint implements IConstraint {
     public void cleanupConstraint() {
         List<Cell> cells = pvm.getCellsForConstraint(this);
         for (Cell cell : cells) {
-            pvm.unlinkConstraint(cell, this,lastOpinions.get(cell));
+            pvm.unlinkConstraint(cell, this, lastOpinions.get(cell));
         }
         lastOpinions.clear();
     }
@@ -129,6 +127,39 @@ public abstract class Constraint implements IConstraint {
         return this.lastOpinions.get(cell);
     }
 
+    @Override
+    public boolean innerRulesPropagateCell(Cell cell, Integer oldValue) {
+        if (!pvm.getCellsForConstraint(this).contains(cell)) {
+            return false;
+        }
+
+        if ((oldValue == null && cell.getValue() != null) ||
+                (oldValue != null && !oldValue.equals(cell.getValue()))) {
+            // Generate updated opinions for the cell
+            for (Cell c : pvm.getCellsForConstraint(this)) {
+                Map<Integer, Boolean> newOpinions = generateUpdatedInnerOpinions(c, cell, oldValue, cell.getValue());
+                updateLastOpinion(c, newOpinions, false);
+            }
+            return true;
+        }
+        return false;
+    }
+
+    @Override
+    public Map<Integer, Boolean> generateUpdatedInnerOpinions(Cell targetCell, Cell changedCell, Integer oldValue,
+            Integer newValue) {
+        if (targetCell == null || changedCell == null || this.lastOpinions == null) {
+            throw new IllegalArgumentException("Arguments cannot be null");
+        }
+
+        return generateInnerOpinions(targetCell);
+    }
+
+    @Override
+    public boolean wideReachRulesPossibleValues(Cell cell, Integer affectedValue) {
+        return false;
+    }
+
     /**
      * Updates the PossibleValuesManager based on a change in a cell's opinion.
      * 
@@ -149,6 +180,37 @@ public abstract class Constraint implements IConstraint {
             pvm.allowCellValue(cell, value, wideReach);
             return 0;
         }
+    }
+
+    @Override
+    public Map.Entry<Cell, Integer> getSolvableCell() {
+        for (Cell cell : pvm.getCellsForConstraint(this)) {
+
+            Map<Integer, Boolean> cellOpinions = lastOpinions.get(cell);
+            if (cellOpinions == null) {
+                continue;
+            }
+            Integer uniqueFalseValue = null;
+
+            for (Map.Entry<Integer, Boolean> valueOpinion : cellOpinions.entrySet()) {
+                if (Boolean.FALSE.equals(valueOpinion.getValue())) {
+                    if (uniqueFalseValue == null) {
+                        uniqueFalseValue = valueOpinion.getKey();
+                    } else {
+                        uniqueFalseValue = null;
+                        break;
+                    }
+                }
+
+            }
+
+            if (uniqueFalseValue != null) {
+                return new AbstractMap.SimpleEntry<>(cell, uniqueFalseValue);
+            }
+
+        }
+
+        return null;
     }
 
 }
